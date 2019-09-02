@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "compile": "tsc",
-    "test": "jest --env=node --colors --coverage test"
+    "coverage": "jest --env=node --colors --coverage test"
   },
   "repository": {
     "type": "git",

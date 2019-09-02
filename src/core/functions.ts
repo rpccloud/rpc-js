@@ -1,5 +1,5 @@
 import { Expression } from "./types";
-import { assertNever } from "../utils";
+import { assertNever } from "../utils/index";
 
 export function evaluate(expr: Expression): number {
     switch (expr.type) {
