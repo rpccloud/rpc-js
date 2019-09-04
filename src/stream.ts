@@ -317,6 +317,58 @@ export class RPCStream {
     }
   }
 
+  public writeArray(v: Array<any>): boolean {
+    if (v === null) {
+      return false;
+    }
+
+    const arrLen: number = v.length;
+    if (arrLen == 0) {
+      this.putByte(64);
+      return true;
+    }
+
+    const startPos: number = this.writePos;
+    if (arrLen > 30) {
+      this.putByte(95);
+    } else {
+      this.putByte(arrLen + 64);
+    }
+
+    this.writePos += 4;
+
+    if (arrLen > 30) {
+      let writeLen: number = arrLen;
+      this.putByte(writeLen);
+      writeLen >>>= 8;
+      this.putByte(writeLen);
+      writeLen >>>= 8;
+      this.putByte(writeLen);
+      this.putByte(writeLen >>> 8);
+    }
+
+    for (let i: number = 0; i < arrLen; i++) {
+      if (!this.write(v[i])) {
+        this.setWritePos(startPos);
+        return false;
+      }
+    }
+
+    // write total length
+    const endPos: number = this.writePos;
+    let totalLength: number = endPos - startPos;
+    this.writePos = startPos + 1;
+    this.putByte(totalLength);
+    totalLength >>>= 8;
+    this.putByte(totalLength);
+    totalLength >>>= 8;
+    this.putByte(totalLength);
+    this.putByte(totalLength >>> 8);
+    this.writePos = endPos;
+
+    return true;
+  }
+
   public write(v: any): boolean {
     if (v === null) {
       this.writeNull();
