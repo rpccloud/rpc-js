@@ -1,5 +1,5 @@
 import {Ieee754} from "./ieee754";
-import {RPCFloat64, RPCInt64} from "./types";
+import {RPCFloat64, RPCInt64, RPCUint64} from "./types";
 
 export class RPCStream {
   private data: Uint8Array;
@@ -97,7 +97,7 @@ export class RPCStream {
     return this.readPos < this.writePos;
   }
 
-  public writeNil(): void {
+  public writeNull(): void {
     this.putByte(1);
   }
 
@@ -111,20 +111,17 @@ export class RPCStream {
 
   public writeFloat64(value: RPCFloat64): boolean {
     const v: number = value.toNumber();
-
-    if (Number.isNaN(v) || Number.isFinite(v)) {
-      return false;
-    }
-
     if (v === 0) {
       this.putByte(4);
       return true;
-    } else {
+    } else if (!Number.isNaN(v)) {
       this.putByte(5);
       let arr: Array<number> = [];
       Ieee754.write(arr, v, 0, true, 52, 8);
       this.putBytes(arr);
       return true;
+    } else {
+      return false;
     }
   }
 
@@ -151,7 +148,8 @@ export class RPCStream {
       this.putByte(v >>> 8);
       return true;
     } else if (v >= -9007199254740991 && v <= 9007199254740991) {
-      if (v < 0) {
+      const negative: boolean = v < 0;
+      if (negative) {
         v += 9007199254740992;
       }
       this.putByte(8);
@@ -166,7 +164,7 @@ export class RPCStream {
       this.putByte(v);
       v >>>= 8;
       this.putByte(v);
-      if (v < 0) {
+      if (negative) {
         this.putByte((v >>> 8) | 0xE0);
         this.putByte(0x7F);
       } else {
@@ -187,5 +185,54 @@ export class RPCStream {
       }
     }
   }
-}
 
+  public writeUint64(value: RPCUint64): boolean {
+    let v: number = value.toNumber();
+
+    if (v < 10) {
+      this.putByte(v + 54);
+      return true;
+    } else if (v < 65536) {
+      this.putByte(9);
+      this.putByte(v);
+      this.putByte(v >>> 8);
+      return true;
+    } else if (v < 4294967296) {
+      this.putByte(10);
+      this.putByte(v);
+      v >>>= 8;
+      this.putByte(v);
+      v >>>= 8;
+      this.putByte(v);
+      this.putByte(v >>> 8);
+      return true;
+    } else if (v <= 9007199254740991) {
+      this.putByte(11);
+      this.putByte(v);
+      v = (v - (v & 0xFF)) / 256;
+      this.putByte(v);
+      v = (v - (v & 0xFF)) / 256;
+      this.putByte(v);
+      v = (v - (v & 0xFF)) / 256;
+      this.putByte(v);
+      v >>>= 8;
+      this.putByte(v);
+      v >>>= 8;
+      this.putByte(v);
+      this.putByte((v >>> 8) & 0x1F);
+      this.putByte(0x00);
+      return true;
+    } else {
+      const bytes: Uint8Array = value.getBytes();
+      if (isNaN(v) && bytes.byteLength == 8) {
+        this.putByte(11);
+        for (let i: number = 0; i < 8; i++) {
+          this.putByte(bytes[i]);
+        }
+        return true;
+      } else {
+        return false;
+      }
+    }
+  }
+}

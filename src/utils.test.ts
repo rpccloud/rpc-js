@@ -17,6 +17,5 @@ describe("utils tests", () => {
     arr0[8] = 36;
     expect(isUint8ArrayEquals(arr0,  arr1)).toBe(false);
   });
-
-
 });
+
