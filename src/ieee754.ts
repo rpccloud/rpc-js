@@ -1,5 +1,5 @@
 /* tslint:disable: all */
-export class IEEE754 {
+export class Ieee754 {
   public static read(
     buf: any,
     offset: number,
