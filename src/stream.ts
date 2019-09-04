@@ -1,5 +1,6 @@
 import {Ieee754} from "./ieee754";
 import {RPCFloat64, RPCInt64, RPCUint64} from "./types";
+import {stringToUTF8} from "./utils";
 
 export class RPCStream {
   private data: Uint8Array;
@@ -29,6 +30,14 @@ export class RPCStream {
 
   public putBytes(value: Array<number>): void {
     this.enlarge(this.writePos + value.length);
+    for (let n of value) {
+      this.data[this.writePos] = n;
+      this.writePos++;
+    }
+  }
+
+  public putUint8Bytes(value: Uint8Array): void {
+    this.enlarge(this.writePos + value.byteLength);
     for (let n of value) {
       this.data[this.writePos] = n;
       this.writePos++;
@@ -233,6 +242,107 @@ export class RPCStream {
       } else {
         return false;
       }
+    }
+  }
+
+  public writeString(v: string): boolean {
+    if (v === null) {
+      return false;
+    }
+
+    if (v === "") {
+      this.putByte(128);
+      return true;
+    }
+
+    const strBuffer: Array<number> = stringToUTF8(v);
+    let length: number = strBuffer.length;
+
+    if (length <= 0) {  // to utf8 error
+      return false;
+    } else if (length < 63) {
+      // write header
+      this.putByte(length + 128);
+      // write body
+      this.putBytes(strBuffer);
+      // write tail
+      this.putByte(0);
+      return true;
+    } else {
+      // write header
+      this.putByte(191);
+      // write length
+      this.putByte(length);
+      length >>>= 8;
+      this.putByte(length);
+      length >>>= 8;
+      this.putByte(length);
+      this.putByte(length >>> 8);
+      // write body
+      this.putBytes(strBuffer);
+      // write tail
+      this.putByte(0);
+      return true;
+    }
+  }
+
+  public writeBytes(v: Uint8Array): boolean {
+    if (v === null) {
+      return false;
+    }
+    let length: number = v.byteLength;
+
+    if (length == 0) {
+      this.putByte(192);
+      return true;
+    } else if (length < 63) {
+      // write header
+      this.putByte(length + 192);
+      // write body
+      this.putUint8Bytes(v);
+      return true;
+    } else {
+      // write header
+      this.putByte(255);
+      // write length
+      this.putByte(length);
+      length >>>= 8;
+      this.putByte(length);
+      length >>>= 8;
+      this.putByte(length);
+      this.putByte(length >>> 8);
+      // write body
+      this.putUint8Bytes(v);
+      return true;
+    }
+  }
+
+  public write(v: any): boolean {
+    if (v === null) {
+      this.writeNull();
+      return true;
+    }
+
+    switch (typeof v) {
+      case "boolean":
+        this.writeBool(v);
+        return true;
+      case "string":
+        return this.writeString(v);
+      case "object":
+        if (v instanceof RPCInt64) {
+          return this.writeInt64(v);
+        } else if (v instanceof RPCUint64) {
+          return this.writeUint64(v);
+        } else if (v instanceof RPCFloat64) {
+          return this.writeFloat64(v);
+        } else if (v instanceof Uint8Array) {
+          return this.writeBytes(v);
+        } else {
+          return false;
+        }
+      default:
+        return false;
     }
   }
 }
