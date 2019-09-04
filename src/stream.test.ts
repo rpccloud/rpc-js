@@ -183,6 +183,105 @@ const testCollections: Map<string, Array<Array<any>>> = new Map([
       0x61, 0x61, 0x61, 0x61, 0x61, 0x61, 0x61, 0x61,
     ])],
   ]],
+  ["array", [
+    [[], new Uint8Array([64])],
+    [[true], new Uint8Array([
+      65, 6, 0, 0, 0, 2,
+    ])],
+    [[true, false], new Uint8Array([
+      66, 7, 0, 0, 0, 2, 3,
+    ])],
+    [[
+      true, true, true, true, true, true, true, true, true, true,
+      true, true, true, true, true, true, true, true, true, true,
+      true, true, true, true, true, true, true, true, true, true,
+    ], new Uint8Array([
+      94, 35, 0, 0, 0, 2, 2, 2, 2, 2,
+      2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+      2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+      2, 2, 2, 2, 2,
+    ])],
+    [[
+      true, true, true, true, true, true, true, true, true, true,
+      true, true, true, true, true, true, true, true, true, true,
+      true, true, true, true, true, true, true, true, true, true,
+      true,
+    ], new Uint8Array([
+      95, 40, 0, 0, 0, 31, 0, 0, 0, 2,
+      2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+      2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+      2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+    ])],
+    [[
+      true, true, true, true, true, true, true, true, true, true,
+      true, true, true, true, true, true, true, true, true, true,
+      true, true, true, true, true, true, true, true, true, true,
+      true, true,
+    ], new Uint8Array([
+      95, 41, 0, 0, 0, 32, 0, 0, 0, 2,
+      2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+      2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+      2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+      2,
+    ])],
+  ]],
+  ["map", [
+    [new Map([]), new Uint8Array([0x60])],
+    [new Map([
+      ["1", true]
+    ]), new Uint8Array([
+      0x61, 0x09, 0x00, 0x00, 0x00, 0x81, 0x31, 0x00, 0x02,
+    ])],
+    [new Map([
+      ["1", true], ["2", true], ["3", true], ["4", true],
+      ["5", true], ["6", true], ["7", true], ["8", true],
+      ["9", true], ["a", true], ["b", true], ["c", true],
+      ["d", true], ["e", true], ["f", true], ["g", true],
+      ["h", true], ["i", true], ["j", true], ["k", true],
+      ["l", true], ["m", true], ["n", true], ["o", true],
+      ["p", true], ["q", true], ["r", true], ["s", true],
+      ["t", true], ["u", true],
+    ]), new Uint8Array([
+      0x7E, 0x7D, 0x00, 0x00, 0x00, 0x81, 0x31, 0x00, 0x02, 0x81,
+      0x32, 0x00, 0x02, 0x81, 0x33, 0x00, 0x02, 0x81, 0x34, 0x00,
+      0x02, 0x81, 0x35, 0x00, 0x02, 0x81, 0x36, 0x00, 0x02, 0x81,
+      0x37, 0x00, 0x02, 0x81, 0x38, 0x00, 0x02, 0x81, 0x39, 0x00,
+      0x02, 0x81, 0x61, 0x00, 0x02, 0x81, 0x62, 0x00, 0x02, 0x81,
+      0x63, 0x00, 0x02, 0x81, 0x64, 0x00, 0x02, 0x81, 0x65, 0x00,
+      0x02, 0x81, 0x66, 0x00, 0x02, 0x81, 0x67, 0x00, 0x02, 0x81,
+      0x68, 0x00, 0x02, 0x81, 0x69, 0x00, 0x02, 0x81, 0x6A, 0x00,
+      0x02, 0x81, 0x6B, 0x00, 0x02, 0x81, 0x6C, 0x00, 0x02, 0x81,
+      0x6D, 0x00, 0x02, 0x81, 0x6E, 0x00, 0x02, 0x81, 0x6F, 0x00,
+      0x02, 0x81, 0x70, 0x00, 0x02, 0x81, 0x71, 0x00, 0x02, 0x81,
+      0x72, 0x00, 0x02, 0x81, 0x73, 0x00, 0x02, 0x81, 0x74, 0x00,
+      0x02, 0x81, 0x75, 0x00, 0x02,
+    ])],
+    [new Map([
+      ["1", true], ["2", true], ["3", true], ["4", true],
+      ["5", true], ["6", true], ["7", true], ["8", true],
+      ["9", true], ["a", true], ["b", true], ["c", true],
+      ["d", true], ["e", true], ["f", true], ["g", true],
+      ["h", true], ["i", true], ["j", true], ["k", true],
+      ["l", true], ["m", true], ["n", true], ["o", true],
+      ["p", true], ["q", true], ["r", true], ["s", true],
+      ["t", true], ["u", true], ["v", true],
+    ]), new Uint8Array([
+      0x7F, 0x85, 0x00, 0x00, 0x00, 0x1F, 0x00, 0x00, 0x00, 0x81,
+      0x31, 0x00, 0x02, 0x81, 0x32, 0x00, 0x02, 0x81, 0x33, 0x00,
+      0x02, 0x81, 0x34, 0x00, 0x02, 0x81, 0x35, 0x00, 0x02, 0x81,
+      0x36, 0x00, 0x02, 0x81, 0x37, 0x00, 0x02, 0x81, 0x38, 0x00,
+      0x02, 0x81, 0x39, 0x00, 0x02, 0x81, 0x61, 0x00, 0x02, 0x81,
+      0x62, 0x00, 0x02, 0x81, 0x63, 0x00, 0x02, 0x81, 0x64, 0x00,
+      0x02, 0x81, 0x65, 0x00, 0x02, 0x81, 0x66, 0x00, 0x02, 0x81,
+      0x67, 0x00, 0x02, 0x81, 0x68, 0x00, 0x02, 0x81, 0x69, 0x00,
+      0x02, 0x81, 0x6A, 0x00, 0x02, 0x81, 0x6B, 0x00, 0x02, 0x81,
+      0x6C, 0x00, 0x02, 0x81, 0x6D, 0x00, 0x02, 0x81, 0x6E, 0x00,
+      0x02, 0x81, 0x6F, 0x00, 0x02, 0x81, 0x70, 0x00, 0x02, 0x81,
+      0x71, 0x00, 0x02, 0x81, 0x72, 0x00, 0x02, 0x81, 0x73, 0x00,
+      0x02, 0x81, 0x74, 0x00, 0x02, 0x81, 0x75, 0x00, 0x02, 0x81,
+      0x76, 0x00, 0x02,
+    ])],
+  ]],
 ]);
 
 describe("stream tests", () => {
@@ -420,8 +519,80 @@ describe("stream tests", () => {
     expect(bug1.getWritePos()).toBe(17);
   });
 
+  test("RPCStream_writeArray", () => {
+    for (let v of testCollections.get("array")!) {
+      const stream: RPCStream = new RPCStream();
+      expect(stream.writeArray(v[0])).toBe(true);
+      expect(isUint8ArrayEquals(
+        stream.getBuffer().slice(17),
+        v[1],
+      )).toBe(true);
+    }
+
+    // null
+    const bug1: RPCStream = new RPCStream();
+    expect(bug1.writeArray(null as any)).toBe(false);
+    expect(bug1.getWritePos()).toBe(17);
+
+    // contain other types
+    const bug2: RPCStream = new RPCStream();
+    expect(bug2.writeArray([true, 1, "hi"])).toBe(false);
+    expect(bug2.getWritePos()).toBe(17);
+  });
+
+  test("RPCStream_writeMap", () => {
+    for (let v of testCollections.get("map")!) {
+      const stream: RPCStream = new RPCStream();
+      expect(stream.writeMap(v[0])).toBe(true);
+      expect(isUint8ArrayEquals(
+        stream.getBuffer().slice(17),
+        v[1],
+      )).toBe(true);
+    }
+
+    // null
+    const bug1: RPCStream = new RPCStream();
+    expect(bug1.writeMap(null as any)).toBe(false);
+    expect(bug1.getWritePos()).toBe(17);
+
+    // contain other types
+    const bug2: RPCStream = new RPCStream();
+    expect(bug2.writeMap(new Map([
+      ['foo', 3],
+    ]))).toBe(false);
+    expect(bug2.getWritePos()).toBe(17);
+
+    // map key error
+    const bug3: RPCStream = new RPCStream();
+    expect(bug3.writeMap(new Map([
+      [String.fromCharCode(2097152), true],
+    ]))).toBe(false);
+    expect(bug3.getWritePos()).toBe(17);
+  });
+
   test("RPCStream_write", () => {
-    const s: RPCStream = new RPCStream();
-    s.write(new RPCUint64(34));
+    for (let key of [
+      "null", "bool", "float64", "int64", "uint64",
+      "string", "bytes", "array", "map",
+    ]) {
+      for (let v of testCollections.get(key)!) {
+        const stream: RPCStream = new RPCStream();
+        expect(stream.write(v[0])).toBe(true);
+        expect(isUint8ArrayEquals(
+          stream.getBuffer().slice(17),
+          v[1],
+        )).toBe(true);
+      }
+    }
+
+    // other unsupported object type
+    const bug1: RPCStream = new RPCStream();
+    expect(bug1.write(new Date())).toBe(false);
+    expect(bug1.getWritePos()).toBe(17);
+
+    // unsupported number type
+    const bug2: RPCStream = new RPCStream();
+    expect(bug2.write(1)).toBe(false);
+    expect(bug2.getWritePos()).toBe(17);
   });
 });

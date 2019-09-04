@@ -323,7 +323,7 @@ export class RPCStream {
     }
 
     const arrLen: number = v.length;
-    if (arrLen == 0) {
+    if (arrLen === 0) {
       this.putByte(64);
       return true;
     }
@@ -369,6 +369,59 @@ export class RPCStream {
     return true;
   }
 
+  public writeMap(v: Map<string, any>): boolean {
+    if (v === null) {
+      return false;
+    }
+
+    const mapLen: number = v.size;
+    if (mapLen === 0) {
+      this.putByte(96);
+      return true;
+    }
+    const startPos: number = this.writePos;
+    if (mapLen > 30) {
+      this.putByte(127);
+    } else {
+      this.putByte(mapLen + 96);
+    }
+    this.writePos += 4;
+    if (mapLen > 30) {
+      let writeLen: number = mapLen;
+      this.putByte(writeLen);
+      writeLen >>>= 8;
+      this.putByte(writeLen);
+      writeLen >>>= 8;
+      this.putByte(writeLen);
+      this.putByte(writeLen >>> 8);
+    }
+
+    for (let [key, value] of v) {
+      if (!this.writeString(key)) {
+        this.setWritePos(startPos);
+        return false;
+      }
+      if (!this.write(value)) {
+        this.setWritePos(startPos);
+        return false;
+      }
+    }
+
+    // write total length
+    const endPos: number = this.writePos;
+    let totalLength: number = endPos - startPos;
+    this.writePos = startPos + 1;
+    this.putByte(totalLength);
+    totalLength >>>= 8;
+    this.putByte(totalLength);
+    totalLength >>>= 8;
+    this.putByte(totalLength);
+    this.putByte(totalLength >>> 8);
+    this.writePos = endPos;
+
+    return true;
+  }
+
   public write(v: any): boolean {
     if (v === null) {
       this.writeNull();
@@ -392,6 +445,8 @@ export class RPCStream {
           return this.writeBytes(v);
         } else if (v instanceof Array) {
           return this.writeArray(v);
+        } else if (v instanceof Map) {
+          return this.writeMap(v);
         } else {
           return false;
         }
