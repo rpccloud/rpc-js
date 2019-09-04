@@ -390,6 +390,8 @@ export class RPCStream {
           return this.writeFloat64(v);
         } else if (v instanceof Uint8Array) {
           return this.writeBytes(v);
+        } else if (v instanceof Array) {
+          return this.writeArray(v);
         } else {
           return false;
         }
