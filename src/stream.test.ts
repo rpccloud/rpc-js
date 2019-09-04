@@ -228,7 +228,7 @@ const testCollections: Map<string, Array<Array<any>>> = new Map([
   ["map", [
     [new Map([]), new Uint8Array([0x60])],
     [new Map([
-      ["1", true]
+      ["1", true],
     ]), new Uint8Array([
       0x61, 0x09, 0x00, 0x00, 0x00, 0x81, 0x31, 0x00, 0x02,
     ])],
@@ -558,7 +558,7 @@ describe("stream tests", () => {
     // contain other types
     const bug2: RPCStream = new RPCStream();
     expect(bug2.writeMap(new Map([
-      ['foo', 3],
+      ["foo", 3],
     ]))).toBe(false);
     expect(bug2.getWritePos()).toBe(17);
 
