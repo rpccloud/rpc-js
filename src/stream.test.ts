@@ -1,7 +1,37 @@
 import {RPCStream} from "./stream";
 import {isUint8ArrayEquals} from "./utils";
+import {RPCFloat64} from "./types";
+
+const testCollections: Map<string, Array<Array<any>>> = new Map([
+  ["null", [
+    [null, new Uint8Array([0x01])],
+  ]],
+  ["bool", [
+    [true, new Uint8Array([0x02])],
+    [false, new Uint8Array([0x03])],
+  ]],
+  ["float64", [
+    [new RPCFloat64(0), new Uint8Array([0x04])],
+    [new RPCFloat64(100), new Uint8Array([
+      0x05, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x59, 0x40,
+    ])],
+    [new RPCFloat64(3.1415926), new Uint8Array([
+      0x05, 0x4A, 0xD8, 0x12, 0x4D, 0xFB, 0x21, 0x09, 0x40,
+    ])],
+    [new RPCFloat64(-3.1415926), new Uint8Array([
+      0x05, 0x4A, 0xD8, 0x12, 0x4D, 0xFB, 0x21, 0x09, 0xC0,
+    ])],
+    [new RPCFloat64(-100), new Uint8Array([
+      0x05, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x59, 0xC0,
+    ])],
+  ]],
+]);
 
 describe("stream tests", () => {
+  test("Start", () => {
+    console.log(testCollections);
+  });
+
   test("RPCStream_new", () => {
     const stream: RPCStream = new RPCStream();
     expect(stream.getReadPos()).toBe(17);
@@ -121,6 +151,17 @@ describe("stream tests", () => {
     for (let i: number = 4294957296; i <= 4294967295; i++) {
       stream.setClientCallbackID(i);
       expect(stream.getClientCallbackID()).toBe(i);
+    }
+  });
+
+  test("RPCStream_writeFloat64", () => {
+    for (let v of testCollections.get("float64")!) {
+      const stream: RPCStream = new RPCStream();
+      stream.writeFloat64(v[0]);
+      expect(isUint8ArrayEquals(
+        stream.getBuffer().slice(17),
+        v[1],
+      )).toBe(true);
     }
   });
 });

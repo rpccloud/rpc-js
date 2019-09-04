@@ -97,10 +97,6 @@ export class RPCStream {
     return this.readPos < this.writePos;
   }
 
-  // private hasNBytesToRead(n: number): boolean {
-  //   return this.readPos + n <= this.writePos
-  // }
-
   public writeNil(): void {
     this.putByte(1);
   }
@@ -113,27 +109,39 @@ export class RPCStream {
     }
   }
 
-  public writeFloat64(value: RPCFloat64): void {
+  public writeFloat64(value: RPCFloat64): boolean {
     const v: number = value.toNumber();
+
+    if (Number.isNaN(v) || Number.isFinite(v)) {
+      return false;
+    }
+
     if (v === 0) {
       this.putByte(4);
+      return true;
     } else {
       this.putByte(5);
       let arr: Array<number> = [];
       Ieee754.write(arr, v, 0, true, 52, 8);
       this.putBytes(arr);
+      return true;
     }
   }
 
-  public writeInt64(value: RPCInt64): void {
+  public writeInt64(value: RPCInt64): boolean {
     let v: number = value.toNumber();
+
     if (v > -8 && v < 33) {
       this.putByte(v + 21);
+      return true;
     } else if (v >= -32768 && v < 32768) {
+      v += 32768;
       this.putByte(6);
       this.putByte(v);
       this.putByte(v >>> 8);
+      return true;
     } else if (v >= -2147483648 && v < 2147483648) {
+      v += 2147483648;
       this.putByte(7);
       this.putByte(v);
       v >>>= 8;
@@ -141,9 +149,12 @@ export class RPCStream {
       v >>>= 8;
       this.putByte(v);
       this.putByte(v >>> 8);
-    } else {
+      return true;
+    } else if (v >= -9007199254740991 && v <= 9007199254740991) {
+      if (v < 0) {
+        v += 9007199254740992;
+      }
       this.putByte(8);
-      let hi: number = v > 0 ? 0 : 0xFF;
       this.putByte(v);
       v = (v - (v & 0xFF)) / 256;
       this.putByte(v);
@@ -155,8 +166,25 @@ export class RPCStream {
       this.putByte(v);
       v >>>= 8;
       this.putByte(v);
-      this.putByte(v >>> 8);
-      this.putByte(hi);
+      if (v < 0) {
+        this.putByte((v >>> 8) | 0xE0);
+        this.putByte(0x7F);
+      } else {
+        this.putByte((v >>> 8) & 0x1F);
+        this.putByte(0x80);
+      }
+      return true;
+    } else {
+      const bytes: Uint8Array = value.getBytes();
+      if (isNaN(v) && bytes.byteLength == 8) {
+        this.putByte(8);
+        for (let i: number = 0; i < 8; i++) {
+          this.putByte(bytes[i]);
+        }
+        return true;
+      } else {
+        return false;
+      }
     }
   }
 }
