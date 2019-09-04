@@ -5,7 +5,9 @@
   "main": "index.js",
   "scripts": {
     "compile": "tsc",
-    "coverage": "jest --env=node --colors --coverage test"
+    "precoverage": "npm run compile",
+    "coverage": "jest --env=node --colors --coverage test",
+    "postcoverage": "open ./coverage/lcov-report/index.html"
   },
   "repository": {
     "type": "git",
