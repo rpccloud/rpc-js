@@ -36,6 +36,36 @@ export class RPCStream {
     }
   }
 
+  public peekByte(): number {
+    if (this.readPos < this.writePos) {
+      return this.data[this.readPos];
+    } else {
+      return -1;
+    }
+  }
+
+  public readNBytes(n: number): Uint8Array {
+    if (n > 0 && Number.isInteger(n)) {
+      const end: number = this.readPos + n;
+      if (end <= this.writePos) {
+        const ret: Uint8Array = this.data.slice(this.readPos, end);
+        this.readPos = end;
+        return ret;
+      }
+    }
+    return new Uint8Array([]);
+  }
+
+  public peekNBytes(n: number): Uint8Array {
+    if (n > 0 && Number.isInteger(n)) {
+      const end: number = this.readPos + n;
+      if (end <= this.writePos) {
+        return this.data.slice(this.readPos, end);
+      }
+    }
+    return new Uint8Array([]);
+  }
+
   public putUint8Bytes(value: Uint8Array): void {
     this.enlarge(this.writePos + value.byteLength);
     for (let n of value) {
@@ -452,6 +482,134 @@ export class RPCStream {
         }
       default:
         return false;
+    }
+  }
+
+  public readNull(): boolean {
+    if (this.peekByte() === 1) {
+      this.readPos++;
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  public readBool(): [boolean, boolean] {
+    const ch: number = this.peekByte();
+
+    if (ch === 2) {
+      this.readPos++;
+      return [true, true];
+    } else if (ch === 3) {
+      this.readPos++;
+      return [false, true];
+    } else {
+      return [false, false];
+    }
+  }
+
+  public readFloat64(): [RPCFloat64, boolean] {
+    const ch: number = this.peekByte();
+    if (ch === 4) {
+      this.readPos++;
+      return [new RPCFloat64(0), true];
+    } else if (ch === 5) {
+      const bytes: Uint8Array = this.readNBytes(9);
+      if (bytes.byteLength === 9) {
+        const v: number =
+          Ieee754.read(bytes, 1, true, 52, 8);
+        return [new RPCFloat64(v), true];
+      }
+    }
+
+    return [new RPCFloat64(NaN), false];
+  }
+
+  public readInt64(): [RPCInt64, boolean] {
+    const ch: number = this.peekByte();
+    if (ch > 13 && ch < 54) {
+      this.readPos++;
+      return [new RPCInt64(ch - 21), true];
+    } else {
+      switch (ch) {
+        case 6: {
+          const bytes: Uint8Array = this.readNBytes(3);
+          if (bytes.byteLength === 3) {
+            const v: number =
+              (bytes[2] & 0xFF) * 256 +
+              (bytes[1] & 0xFF) -
+              32768;
+            return [new RPCInt64(v), true];
+          }
+          break;
+        }
+        case 7: {
+          const bytes: Uint8Array = this.readNBytes(5);
+          if (bytes.byteLength === 5) {
+            const v: number =
+              (bytes[4] & 0xFF) * 16777216 +
+              (bytes[3] & 0xFF) * 65536 +
+              (bytes[2] & 0xFF) * 256 +
+              (bytes[1] & 0xFF) -
+              2147483648;
+            return [new RPCInt64(v), true];
+          }
+          break;
+        }
+        case 8: {
+          const bytes: Uint8Array = this.readNBytes(9);
+          if (bytes.byteLength === 9) {
+            return [RPCInt64.fromBytes(bytes.slice(1)), true];
+          }
+          break;
+        }
+        default:
+          break;
+      }
+      return [new RPCInt64(NaN), false];
+    }
+  }
+
+  public readUint64(): [RPCUint64, boolean] {
+    const ch: number = this.peekByte();
+    if (ch > 53 && ch < 64) {
+      this.readPos++;
+      return [new RPCUint64(ch - 54), true];
+    } else {
+      switch (ch) {
+        case 9: {
+          const bytes: Uint8Array = this.readNBytes(3);
+          if (bytes.byteLength === 3) {
+            const v: number =
+              (bytes[2] & 0xFF) * 256 +
+              (bytes[1] & 0xFF);
+            return [new RPCUint64(v), true];
+          }
+          break;
+        }
+        case 10: {
+          const bytes: Uint8Array = this.readNBytes(5);
+          if (bytes.byteLength === 5) {
+            const v: number =
+              (bytes[4] & 0xFF) * 16777216 +
+              (bytes[3] & 0xFF) * 65536 +
+              (bytes[2] & 0xFF) * 256 +
+              (bytes[1] & 0xFF);
+            return [new RPCUint64(v), true];
+          }
+          break;
+        }
+        case 11: {
+          const bytes: Uint8Array = this.readNBytes(9);
+          if (bytes.byteLength === 9) {
+            return [RPCUint64.fromBytes(bytes.slice(1)), true];
+          }
+          break;
+        }
+        default:
+          break;
+      }
+      return [new RPCUint64(NaN), false];
     }
   }
 }
