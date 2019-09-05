@@ -285,10 +285,6 @@ const testCollections: Map<string, Array<Array<any>>> = new Map([
 ]);
 
 describe("stream tests", () => {
-  test("Start", () => {
-    console.log(testCollections);
-  });
-
   test("RPCStream_new", () => {
     const stream: RPCStream = new RPCStream();
     expect(stream.getReadPos()).toBe(17);
@@ -308,7 +304,7 @@ describe("stream tests", () => {
     const arr: Uint8Array = new Uint8Array(3000);
     for (let i: number = 0; i < 3000; i++) {
       arr[i] = i;
-      stream.putByte(i);
+      (stream as any).putByte(i);
     }
     expect(isUint8ArrayEquals(stream.getBuffer(), arr)).toBe(true);
   });
@@ -318,7 +314,7 @@ describe("stream tests", () => {
     stream.setWritePos(0);
 
     // empty bytes
-    stream.putBytes([]);
+    (stream as any).putBytes([]);
     expect(isUint8ArrayEquals(
       stream.getBuffer(),
       new Uint8Array(0),
@@ -326,7 +322,7 @@ describe("stream tests", () => {
 
     // small bytes
     stream.setWritePos(0);
-    stream.putBytes([1, 2, 3]);
+    (stream as any).putBytes([1, 2, 3]);
     expect(isUint8ArrayEquals(
       stream.getBuffer(),
       new Uint8Array([1, 2, 3]),
@@ -338,7 +334,7 @@ describe("stream tests", () => {
       largeNumberArr[i] = i & 0xFF;
     }
     stream.setWritePos(0);
-    stream.putBytes(largeNumberArr);
+    (stream as any).putBytes(largeNumberArr);
     expect(isUint8ArrayEquals(
       stream.getBuffer(),
       new Uint8Array(largeNumberArr),

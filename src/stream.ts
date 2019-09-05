@@ -22,13 +22,13 @@ export class RPCStream {
     }
   }
 
-  public putByte(value: number): void {
+  private putByte(value: number): void {
     this.enlarge(this.writePos + 1);
     this.data[this.writePos] = value;
     this.writePos++;
   }
 
-  public putBytes(value: Array<number>): void {
+  private putBytes(value: Array<number>): void {
     this.enlarge(this.writePos + value.length);
     for (let n of value) {
       this.data[this.writePos] = n;
@@ -36,7 +36,7 @@ export class RPCStream {
     }
   }
 
-  public peekByte(): number {
+  private peekByte(): number {
     if (this.readPos < this.writePos) {
       return this.data[this.readPos];
     } else {
@@ -44,7 +44,7 @@ export class RPCStream {
     }
   }
 
-  public readNBytes(n: number): Uint8Array {
+  private readNBytes(n: number): Uint8Array {
     if (n > 0 && Number.isInteger(n)) {
       const end: number = this.readPos + n;
       if (end <= this.writePos) {
@@ -56,17 +56,17 @@ export class RPCStream {
     return new Uint8Array([]);
   }
 
-  public peekNBytes(n: number): Uint8Array {
-    if (n > 0 && Number.isInteger(n)) {
-      const end: number = this.readPos + n;
-      if (end <= this.writePos) {
-        return this.data.slice(this.readPos, end);
-      }
-    }
-    return new Uint8Array([]);
-  }
+  // private peekNBytes(n: number): Uint8Array {
+  //   if (n > 0 && Number.isInteger(n)) {
+  //     const end: number = this.readPos + n;
+  //     if (end <= this.writePos) {
+  //       return this.data.slice(this.readPos, end);
+  //     }
+  //   }
+  //   return new Uint8Array([]);
+  // }
 
-  public putUint8Bytes(value: Uint8Array): void {
+  private putUint8Bytes(value: Uint8Array): void {
     this.enlarge(this.writePos + value.byteLength);
     for (let n of value) {
       this.data[this.writePos] = n;
