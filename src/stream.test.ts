@@ -603,7 +603,7 @@ describe("stream tests", () => {
       // overflow
       const stream2: RPCStream = new RPCStream();
       expect(stream2.write(v[0])).toBe(true);
-      const writePos:number = stream2.getWritePos();
+      const writePos: number = stream2.getWritePos();
       for (let idx: number = 17; idx < writePos; idx++) {
         stream2.setWritePos(idx);
         expect(stream2.readNull()).toBe(false);
@@ -629,7 +629,7 @@ describe("stream tests", () => {
       // overflow
       const stream2: RPCStream = new RPCStream();
       expect(stream2.write(v[0])).toBe(true);
-      const writePos:number = stream2.getWritePos();
+      const writePos: number = stream2.getWritePos();
       for (let idx: number = 17; idx < writePos; idx++) {
         stream2.setWritePos(idx);
         expect(stream2.readBool()).toStrictEqual([false, false]);
@@ -655,7 +655,7 @@ describe("stream tests", () => {
       // overflow
       const stream2: RPCStream = new RPCStream();
       expect(stream2.write(v[0])).toBe(true);
-      const writePos:number = stream2.getWritePos();
+      const writePos: number = stream2.getWritePos();
       for (let idx: number = 17; idx < writePos; idx++) {
         stream2.setWritePos(idx);
         expect(stream2.readFloat64())
@@ -683,7 +683,7 @@ describe("stream tests", () => {
       // overflow
       const stream2: RPCStream = new RPCStream();
       expect(stream2.write(v[0])).toBe(true);
-      const writePos:number = stream2.getWritePos();
+      const writePos: number = stream2.getWritePos();
       for (let idx: number = 17; idx < writePos; idx++) {
         stream2.setWritePos(idx);
         expect(stream2.readInt64())
@@ -711,7 +711,7 @@ describe("stream tests", () => {
       // overflow
       const stream2: RPCStream = new RPCStream();
       expect(stream2.write(v[0])).toBe(true);
-      const writePos:number = stream2.getWritePos();
+      const writePos: number = stream2.getWritePos();
       for (let idx: number = 17; idx < writePos; idx++) {
         stream2.setWritePos(idx);
         expect(stream2.readUint64())
