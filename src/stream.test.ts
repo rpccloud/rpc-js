@@ -789,5 +789,139 @@ describe("stream tests", () => {
       expect(stream2.getReadPos()).toBe(17);
     }
   });
+
+  test("RPCStream_readArray", () => {
+    for (let v of testCollections.get("array")!) {
+      // ok
+      const stream1: RPCStream = new RPCStream();
+      expect(stream1.write(v[0])).toBe(true);
+      expect(stream1.readArray()).toStrictEqual([v[0], true]);
+      expect(stream1.getWritePos()).toBe(stream1.getReadPos());
+
+      // overflow
+      const stream2: RPCStream = new RPCStream();
+      expect(stream2.write(v[0])).toBe(true);
+      const writePos: number = stream2.getWritePos();
+      for (let idx: number = 17; idx < writePos; idx++) {
+        stream2.setWritePos(idx);
+        expect(stream2.readArray()).toStrictEqual([[], false]);
+        expect(stream2.getReadPos()).toBe(17);
+      }
+
+      // type not match
+      const stream3: RPCStream = new RPCStream();
+      (stream3 as any).putByte(13);
+      expect(stream2.readArray()).toStrictEqual([[], false]);
+      expect(stream2.getReadPos()).toBe(17);
+
+      // error in stream
+      const stream4: RPCStream = new RPCStream();
+      expect(stream4.write(v[0])).toBe(true);
+      if ((v[0] as Array<any>).length > 0) {
+        stream4.setWritePos(stream4.getWritePos() - 1);
+        (stream4 as any).putByte(13);
+        expect(stream2.readArray()).toStrictEqual([[], false]);
+        expect(stream2.getReadPos()).toBe(17);
+      }
+
+      // error in stream
+      const stream5: RPCStream = new RPCStream();
+      (stream5 as any).putBytes([
+        0x41, 0x07, 0x00, 0x00, 0x00, 0x02, 0x02,
+      ]);
+      expect(stream2.readArray()).toStrictEqual([[], false]);
+      expect(stream2.getReadPos()).toBe(17);
+    }
+  });
+
+  test("RPCStream_readMap", () => {
+    for (let v of testCollections.get("map")!) {
+      // ok
+      const stream1: RPCStream = new RPCStream();
+      expect(stream1.write(v[0])).toBe(true);
+      expect(stream1.readMap()).toStrictEqual([v[0], true]);
+      expect(stream1.getWritePos()).toBe(stream1.getReadPos());
+
+      // overflow
+      const stream2: RPCStream = new RPCStream();
+      expect(stream2.write(v[0])).toBe(true);
+      const writePos: number = stream2.getWritePos();
+      for (let idx: number = 17; idx < writePos; idx++) {
+        stream2.setWritePos(idx);
+        expect(stream2.readMap())
+          .toStrictEqual([new Map<string, any>(), false]);
+        expect(stream2.getReadPos()).toBe(17);
+      }
+
+      // type not match
+      const stream3: RPCStream = new RPCStream();
+      (stream3 as any).putByte(13);
+      expect(stream2.readMap())
+        .toStrictEqual([new Map<string, any>(), false]);
+      expect(stream2.getReadPos()).toBe(17);
+
+      // error in stream
+      const stream4: RPCStream = new RPCStream();
+      expect(stream4.write(v[0])).toBe(true);
+      if ((v[0] as Array<any>).length > 0) {
+        stream4.setWritePos(stream4.getWritePos() - 1);
+        (stream4 as any).putByte(13);
+        expect(stream2.readMap())
+          .toStrictEqual([new Map<string, any>(), false]);
+        expect(stream2.getReadPos()).toBe(17);
+      }
+
+      // error in stream, length error
+      const stream5: RPCStream = new RPCStream();
+      (stream5 as any).putBytes([
+        0x61, 0x0A, 0x00, 0x00, 0x00, 0x81, 0x31, 0x00, 0x02, 0x02,
+      ]);
+      expect(stream2.readMap())
+        .toStrictEqual([new Map<string, any>(), false]);
+      expect(stream2.getReadPos()).toBe(17);
+
+      // error in stream, key error
+      const stream6: RPCStream = new RPCStream();
+      expect(stream1.write(v[0])).toBe(true);
+      const mapSize: number = (v[0] as Map<string, any>).size;
+      const wPos: number = stream6.getWritePos();
+      if (mapSize > 30) {
+        stream6.setWritePos(17 + 9);
+        (stream6 as any).putByte(13);
+        stream6.setWritePos(wPos);
+        expect(stream2.readMap())
+          .toStrictEqual([new Map<string, any>(), false]);
+        expect(stream2.getReadPos()).toBe(17);
+      } else if (mapSize > 0) {
+        stream6.setWritePos(17 + 5);
+        (stream6 as any).putByte(13);
+        stream6.setWritePos(wPos);
+        expect(stream2.readMap())
+          .toStrictEqual([new Map<string, any>(), false]);
+        expect(stream2.getReadPos()).toBe(17);
+      }
+    }
+  });
+
+  test("RPCStream_read", () => {
+    for (let key of [
+      "null", "bool", "float64", "int64", "uint64",
+      "string", "bytes", "array", "map",
+    ]) {
+      for (let v of testCollections.get(key)!) {
+        const stream: RPCStream = new RPCStream();
+        (stream as any).putBytes(v[1]);
+        expect(stream.read()).toStrictEqual([v[0], true]);
+      }
+    }
+
+    const stream1: RPCStream = new RPCStream();
+    (stream1 as any).putByte(12);
+    expect(stream1.read()).toStrictEqual([null, false]);
+
+    const stream2: RPCStream = new RPCStream();
+    (stream2 as any).putByte(13);
+    expect(stream2.read()).toStrictEqual([null, false]);
+  });
 });
 

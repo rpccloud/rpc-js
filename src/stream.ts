@@ -688,4 +688,173 @@ export class RPCStream {
 
     return [new Uint8Array([]), false];
   }
+
+  public readArray(): [Array<any>, boolean] {
+    const ch: number = this.peekByte();
+
+    if (ch >= 64 && ch < 96) {
+      let arrLen: number = 0;
+      let totalLen: number = 0;
+      let readStart: number = this.readPos;
+
+      if (ch === 64) {
+        this.readPos++;
+        return [new Array<any>(), true];
+      } else if (ch < 95) {
+        arrLen = ch - 64;
+        const lenBytes: Uint8Array = this.readNBytes(5);
+        if (lenBytes.byteLength === 5) {
+          totalLen =
+            (lenBytes[4] & 0xFF) * 16777216 +
+            (lenBytes[3] & 0xFF) * 65536 +
+            (lenBytes[2] & 0xFF) * 256 +
+            (lenBytes[1] & 0xFF);
+        }
+      } else {
+        const lenBytes: Uint8Array = this.readNBytes(9);
+        if (lenBytes.byteLength === 9) {
+          totalLen =
+            (lenBytes[4] & 0xFF) * 16777216 +
+            (lenBytes[3] & 0xFF) * 65536 +
+            (lenBytes[2] & 0xFF) * 256 +
+            (lenBytes[1] & 0xFF);
+          arrLen =
+            (lenBytes[8] & 0xFF) * 16777216 +
+            (lenBytes[7] & 0xFF) * 65536 +
+            (lenBytes[6] & 0xFF) * 256 +
+            (lenBytes[5] & 0xFF);
+        }
+      }
+
+      if (arrLen > 0 && totalLen > 4) {
+        const ret: Array<any> = new Array<any>();
+
+        for (let i: number = 0; i < arrLen; i++) {
+          let [v, ok] = this.read();
+          if (ok) {
+            ret.push(v);
+          } else {
+            this.setReadPos(readStart);
+            return [[], false];
+          }
+        }
+        if (this.getReadPos() == readStart + totalLen) {
+          return [ret, true];
+        }
+      }
+      this.setReadPos(readStart);
+    }
+    return [[], false];
+  }
+
+  public readMap(): [Map<string, any>, boolean] {
+    const ch: number = this.peekByte();
+    if (ch >= 96 && ch < 128) {
+      let mapLen: number = 0;
+      let totalLen: number = 0;
+      let readStart: number = this.readPos;
+
+      if (ch == 96) {
+        this.readPos++;
+        return [new Map<string, any>(), true];
+      } else if (ch < 127) {
+        mapLen = ch - 96;
+        const lenBytes: Uint8Array = this.readNBytes(5);
+        if (lenBytes.byteLength === 5) {
+          totalLen =
+            (lenBytes[4] & 0xFF) * 16777216 +
+            (lenBytes[3] & 0xFF) * 65536 +
+            (lenBytes[2] & 0xFF) * 256 +
+            (lenBytes[1] & 0xFF);
+        }
+      } else {
+        const lenBytes: Uint8Array = this.readNBytes(9);
+        if (lenBytes.byteLength === 9) {
+          totalLen =
+            (lenBytes[4] & 0xFF) * 16777216 +
+            (lenBytes[3] & 0xFF) * 65536 +
+            (lenBytes[2] & 0xFF) * 256 +
+            (lenBytes[1] & 0xFF);
+          mapLen =
+            (lenBytes[8] & 0xFF) * 16777216 +
+            (lenBytes[7] & 0xFF) * 65536 +
+            (lenBytes[6] & 0xFF) * 256 +
+            (lenBytes[5] & 0xFF);
+        }
+      }
+
+      if (mapLen > 0 && totalLen > 4) {
+        const ret: Map<string, any> = new Map<string, any>();
+
+        for (let i: number = 0; i < mapLen; i++) {
+          let [name, ok] = this.readString();
+          if (!ok) {
+            this.setReadPos(readStart);
+            return [new Map<string, any>(), false];
+          }
+          let [value, vok] = this.read();
+          if (vok) {
+            ret.set(name, value);
+          } else {
+            this.setReadPos(readStart);
+            return [new Map<string, any>(), false];
+          }
+        }
+        if (this.getReadPos() == readStart + totalLen) {
+          return [ret, true];
+        }
+      }
+      this.setReadPos(readStart);
+    }
+
+    return [new Map<string, any>(), false];
+  }
+
+  public read(): [any, boolean] {
+    const op: number = this.peekByte();
+
+    switch (op) {
+      case 1:
+        return [null, this.readNull()];
+      case 2:
+      case 3:
+        return this.readBool();
+      case 4:
+      case 5:
+        return this.readFloat64();
+      case 6:
+      case 7:
+      case 8:
+        return this.readInt64();
+      case 9:
+      case 10:
+      case 11:
+        return this.readUint64();
+      case 12:
+        return [null, false];
+      case 13:
+        return [null, false];
+      default:
+        break;
+    }
+
+    switch ((op >>> 6) & 0x03) {
+    case 0:
+      if (op < 54) {
+        return this.readInt64();
+      } else {
+        return this.readUint64();
+      }
+    case 1:
+      if (op < 96) {
+        return this.readArray();
+      } else {
+        return this.readMap();
+      }
+    case 2:
+      return this.readString();
+    default:
+      return this.readBytes();
+   }
+  }
 }
