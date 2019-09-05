@@ -1,6 +1,6 @@
 import {Ieee754} from "./ieee754";
 import {RPCFloat64, RPCInt64, RPCUint64} from "./types";
-import {stringToUTF8} from "./utils";
+import {stringToUTF8, utf8ToString} from "./utils";
 
 export class RPCStream {
   private data: Uint8Array;
@@ -611,5 +611,81 @@ export class RPCStream {
       }
       return [new RPCUint64(NaN), false];
     }
+  }
+
+  public readString(): [string, boolean] {
+    const ch: number = this.peekByte();
+    if (ch === 128) {
+      this.readPos++;
+      return ["", true];
+    } else if (ch > 128 && ch < 191) {
+      const oldReadPos: number = this.readPos;
+      const length: number = ch - 128;
+      const bytes: Uint8Array = this.readNBytes(length + 2);
+      if (bytes.byteLength === length + 2 && bytes[length + 1] === 0) {
+        let [v, ok] = utf8ToString(bytes, 1, length + 1);
+        if (ok) {
+          return [v, true];
+        }
+      }
+      this.setReadPos(oldReadPos);
+      return ["", false];
+    } else if (ch == 191) {
+      const oldReadPos: number = this.readPos;
+      const lenBytes: Uint8Array = this.readNBytes(5);
+      if (lenBytes.byteLength === 5) {
+        const length: number =
+          (lenBytes[4] & 0xFF) * 16777216 +
+          (lenBytes[3] & 0xFF) * 65536 +
+          (lenBytes[2] & 0xFF) * 256 +
+          (lenBytes[1] & 0xFF);
+        if (length > 62) {
+          const bytes: Uint8Array = this.readNBytes(length + 1);
+          if (bytes.byteLength === length + 1 && bytes[length] === 0) {
+            let [v, ok] = utf8ToString(bytes, 0, length);
+            if (ok) {
+              return [v, true];
+            }
+          }
+        }
+      }
+      this.setReadPos(oldReadPos);
+      return ["", false];
+    }
+    return ["", false];
+  }
+
+  public readBytes(): [Uint8Array, boolean] {
+    const ch: number = this.peekByte();
+    if (ch === 192) {
+      this.readPos++;
+      return [new Uint8Array([]), true];
+    } else if (ch > 192 && ch < 255) {
+      const length: number = ch - 192;
+      const bytes: Uint8Array = this.readNBytes(length + 1);
+      if (bytes.byteLength === length + 1) {
+        return [bytes.slice(1), true];
+      }
+    } else if (ch === 255) {
+      const oldReadPos: number = this.readPos;
+      const lenBytes: Uint8Array = this.readNBytes(5);
+      if (lenBytes.byteLength === 5) {
+        const length: number =
+          (lenBytes[4] & 0xFF) * 16777216 +
+          (lenBytes[3] & 0xFF) * 65536 +
+          (lenBytes[2] & 0xFF) * 256 +
+          (lenBytes[1] & 0xFF);
+        if (length > 62) {
+          const bytes: Uint8Array = this.readNBytes(length);
+          if (bytes.byteLength === length) {
+            return [bytes, true];
+          }
+        }
+      }
+      this.setReadPos(oldReadPos);
+      return [new Uint8Array([]), false];
+    }
+
+    return [new Uint8Array([]), false];
   }
 }

@@ -43,3 +43,72 @@ function stringToUTF8(v: string): Array<number> {
 
   return ret;
 }
+
+export
+function utf8ToString(
+  v: Uint8Array,
+  start?: number,
+  end?: number,
+): [string, boolean] {
+  const retArray: Array<number> = [];
+  let idx: number = (start === undefined) ? 0 : start;
+  let readEnd: number = (end === undefined) ? v.byteLength : end;
+  if (readEnd > v.byteLength || idx >= readEnd) {
+    return ["", false];
+  }
+
+  const byteLen: number = v.byteLength;
+
+  while (idx < readEnd) {
+    const ch: number = v[idx];
+
+    if (ch < 128) {
+      idx++;
+      retArray.push(ch);
+    } else if (ch < 224) {
+      if (idx + 1 < byteLen) {
+        const unicode: number =
+          ((ch & 0x1F) << 6) |
+          (v[idx+1] & 0x3F);
+        idx += 2;
+        retArray.push(unicode);
+      } else {
+        return ["", false];
+      }
+    } else if (ch < 240) {
+      if (idx + 2 < byteLen) {
+        const unicode: number =
+          ((ch & 0x0F) << 12) |
+          ((v[idx+1] & 0x3F) << 6) |
+          (v[idx+2] & 0x3F);
+        idx += 3;
+        retArray.push(unicode);
+      } else {
+        return ["", false];
+      }
+    } else if (ch < 248) {
+      if (idx + 3 < byteLen) {
+        const unicode: number =
+          ((ch & 0x07) << 18) |
+          ((v[idx+1] & 0x3F) << 12) |
+          ((v[idx+2] & 0x3F) << 6) |
+          (v[idx+3] & 0x3F);
+        idx += 4;
+        if (unicode >= 0x0000 && unicode <= 0xD7FF) {
+          retArray.push(unicode);
+        } else if (unicode >= 0xE000 && unicode <= 0xFFFF) {
+          retArray.push(unicode);
+        } else if (unicode >= 0x010000 && unicode <= 0x10FFFF) {
+          retArray.push(unicode);
+        } else {
+          return ["", false];
+        }
+      }
+    } else {
+      return ["", false];
+    }
+  }
+
+  return [String.fromCodePoint(...retArray), true];
+}
+
