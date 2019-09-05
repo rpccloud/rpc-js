@@ -56,16 +56,6 @@ export class RPCStream {
     return new Uint8Array([]);
   }
 
-  // private peekNBytes(n: number): Uint8Array {
-  //   if (n > 0 && Number.isInteger(n)) {
-  //     const end: number = this.readPos + n;
-  //     if (end <= this.writePos) {
-  //       return this.data.slice(this.readPos, end);
-  //     }
-  //   }
-  //   return new Uint8Array([]);
-  // }
-
   private putUint8Bytes(value: Uint8Array): void {
     this.enlarge(this.writePos + value.byteLength);
     for (let n of value) {
@@ -133,7 +123,7 @@ export class RPCStream {
   }
 
   public canRead(): boolean {
-    return this.readPos < this.writePos;
+    return this.readPos < this.writePos && this.readPos < this.data.byteLength;
   }
 
   public writeNull(): void {

@@ -140,6 +140,19 @@ const testCollections: Map<string, Array<Array<any>>> = new Map([
     ["a", new Uint8Array([
       0x81, 0x61, 0x00,
     ])],
+    ["😀☘️🀄️©️🌈🎩", new Uint8Array([
+      0x9E, 0xF0, 0x9F, 0x98, 0x80, 0xE2, 0x98, 0x98, 0xEF, 0xB8,
+      0x8F, 0xF0, 0x9F, 0x80, 0x84, 0xEF, 0xB8, 0x8F, 0xC2, 0xA9,
+      0xEF, 0xB8, 0x8F, 0xF0, 0x9F, 0x8C, 0x88, 0xF0, 0x9F, 0x8E,
+      0xA9, 0x00,
+    ])],
+    ["😀中☘️文🀄️©️🌈🎩测试a\n\r\b", new Uint8Array([
+      0xAE, 0xF0, 0x9F, 0x98, 0x80, 0xE4, 0xB8, 0xAD, 0xE2, 0x98,
+      0x98, 0xEF, 0xB8, 0x8F, 0xE6, 0x96, 0x87, 0xF0, 0x9F, 0x80,
+      0x84, 0xEF, 0xB8, 0x8F, 0xC2, 0xA9, 0xEF, 0xB8, 0x8F, 0xF0,
+      0x9F, 0x8C, 0x88, 0xF0, 0x9F, 0x8E, 0xA9, 0xE6, 0xB5, 0x8B,
+      0xE8, 0xAF, 0x95, 0x61, 0x0A, 0x0D, 0x08, 0x00,
+    ])],
     ["aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
       new Uint8Array([
         0xBF, 0x3F, 0x00, 0x00, 0x00, 0x61, 0x61, 0x61, 0x61, 0x61,
@@ -150,13 +163,21 @@ const testCollections: Map<string, Array<Array<any>>> = new Map([
         0x61, 0x61, 0x61, 0x61, 0x61, 0x61, 0x61, 0x61, 0x61, 0x61,
         0x61, 0x61, 0x61, 0x61, 0x61, 0x61, 0x61, 0x61, 0x00,
       ])],
-    ["😀中☘️文🀄️©️🌈🎩测试a\n\r\b", new Uint8Array([
-      0xAE, 0xF0, 0x9F, 0x98, 0x80, 0xE4, 0xB8, 0xAD, 0xE2, 0x98,
-      0x98, 0xEF, 0xB8, 0x8F, 0xE6, 0x96, 0x87, 0xF0, 0x9F, 0x80,
-      0x84, 0xEF, 0xB8, 0x8F, 0xC2, 0xA9, 0xEF, 0xB8, 0x8F, 0xF0,
-      0x9F, 0x8C, 0x88, 0xF0, 0x9F, 0x8E, 0xA9, 0xE6, 0xB5, 0x8B,
-      0xE8, 0xAF, 0x95, 0x61, 0x0A, 0x0D, 0x08, 0x00,
-    ])],
+    ["😀☘️🀄️©️🌈🎩😛👩‍👩‍👦👨‍👩‍👦‍👦👼🗣👑👚👹👺🌳🍊",
+      new Uint8Array([
+        0xBF, 0x6D, 0x00, 0x00, 0x00, 0xF0, 0x9F, 0x98, 0x80, 0xE2,
+        0x98, 0x98, 0xEF, 0xB8, 0x8F, 0xF0, 0x9F, 0x80, 0x84, 0xEF,
+        0xB8, 0x8F, 0xC2, 0xA9, 0xEF, 0xB8, 0x8F, 0xF0, 0x9F, 0x8C,
+        0x88, 0xF0, 0x9F, 0x8E, 0xA9, 0xF0, 0x9F, 0x98, 0x9B, 0xF0,
+        0x9F, 0x91, 0xA9, 0xE2, 0x80, 0x8D, 0xF0, 0x9F, 0x91, 0xA9,
+        0xE2, 0x80, 0x8D, 0xF0, 0x9F, 0x91, 0xA6, 0xF0, 0x9F, 0x91,
+        0xA8, 0xE2, 0x80, 0x8D, 0xF0, 0x9F, 0x91, 0xA9, 0xE2, 0x80,
+        0x8D, 0xF0, 0x9F, 0x91, 0xA6, 0xE2, 0x80, 0x8D, 0xF0, 0x9F,
+        0x91, 0xA6, 0xF0, 0x9F, 0x91, 0xBC, 0xF0, 0x9F, 0x97, 0xA3,
+        0xF0, 0x9F, 0x91, 0x91, 0xF0, 0x9F, 0x91, 0x9A, 0xF0, 0x9F,
+        0x91, 0xB9, 0xF0, 0x9F, 0x91, 0xBA, 0xF0, 0x9F, 0x8C, 0xB3,
+        0xF0, 0x9F, 0x8D, 0x8A, 0x00,
+      ])],
   ]],
   ["bytes", [
     [new Uint8Array([]), new Uint8Array([
@@ -381,6 +402,46 @@ describe("stream tests", () => {
     stream.reset();
     expect(stream.getReadPos()).toBe(17);
     expect(stream.getWritePos()).toBe(17);
+  });
+
+  test("RPCStream_canRead", () => {
+    const stream: RPCStream = new RPCStream();
+    stream.setWritePos(1000);
+    stream.setReadPos(800);
+    expect(stream.canRead()).toBe(true);
+
+    stream.setWritePos(800);
+    stream.setReadPos(800);
+    expect(stream.canRead()).toBe(false);
+
+    stream.setWritePos(700);
+    stream.setReadPos(800);
+    expect(stream.canRead()).toBe(false);
+
+    stream.setWritePos(2000);
+    stream.setReadPos(1800);
+    expect(stream.canRead()).toBe(false);
+  });
+
+  test("RPCStream_readNBytes", () => {
+    const stream: RPCStream = new RPCStream();
+    stream.setWritePos(1000);
+
+    // ok
+    stream.setReadPos(800);
+    expect((stream as any).readNBytes(200).byteLength).toBe(200);
+
+    // length overflow
+    stream.setReadPos(800);
+    expect((stream as any).readNBytes(201).byteLength).toBe(0);
+
+    // data buffer is not init
+    stream.setWritePos(2000);
+    stream.setReadPos(1800);
+    expect((stream as any).readNBytes(100).byteLength).toBe(0);
+
+    // parameter error
+    expect((stream as any).readNBytes(-1).byteLength).toBe(0);
   });
 
   test("RPCStream_getClientCallbackID_setClientCallbackID", () => {
@@ -613,8 +674,8 @@ describe("stream tests", () => {
       // type not match
       const stream3: RPCStream = new RPCStream();
       (stream3 as any).putByte(13);
-      expect(stream2.readNull()).toBe(false);
-      expect(stream2.getReadPos()).toBe(17);
+      expect(stream3.readNull()).toBe(false);
+      expect(stream3.getReadPos()).toBe(17);
     }
   });
 
@@ -639,8 +700,8 @@ describe("stream tests", () => {
       // type not match
       const stream3: RPCStream = new RPCStream();
       (stream3 as any).putByte(13);
-      expect(stream2.readBool()).toStrictEqual([false, false]);
-      expect(stream2.getReadPos()).toBe(17);
+      expect(stream3.readBool()).toStrictEqual([false, false]);
+      expect(stream3.getReadPos()).toBe(17);
     }
   });
 
@@ -666,9 +727,9 @@ describe("stream tests", () => {
       // type not match
       const stream3: RPCStream = new RPCStream();
       (stream3 as any).putByte(13);
-      expect(stream2.readFloat64())
+      expect(stream3.readFloat64())
         .toStrictEqual([new RPCFloat64(NaN), false]);
-      expect(stream2.getReadPos()).toBe(17);
+      expect(stream3.getReadPos()).toBe(17);
     }
   });
 
@@ -694,9 +755,9 @@ describe("stream tests", () => {
       // type not match
       const stream3: RPCStream = new RPCStream();
       (stream3 as any).putByte(13);
-      expect(stream2.readInt64())
+      expect(stream3.readInt64())
         .toStrictEqual([new RPCInt64(NaN), false]);
-      expect(stream2.getReadPos()).toBe(17);
+      expect(stream3.getReadPos()).toBe(17);
     }
   });
 
@@ -722,9 +783,9 @@ describe("stream tests", () => {
       // type not match
       const stream3: RPCStream = new RPCStream();
       (stream3 as any).putByte(13);
-      expect(stream2.readUint64())
+      expect(stream3.readUint64())
         .toStrictEqual([new RPCUint64(NaN), false]);
-      expect(stream2.getReadPos()).toBe(17);
+      expect(stream3.getReadPos()).toBe(17);
     }
   });
 
@@ -749,17 +810,61 @@ describe("stream tests", () => {
       // type not match
       const stream3: RPCStream = new RPCStream();
       (stream3 as any).putByte(13);
-      expect(stream2.readString()).toStrictEqual(["", false]);
-      expect(stream2.getReadPos()).toBe(17);
+      expect(stream3.readString()).toStrictEqual(["", false]);
+      expect(stream3.getReadPos()).toBe(17);
 
       // read tail is not zero
       const stream4: RPCStream = new RPCStream();
       expect(stream4.write(v[0])).toBe(true);
       stream4.setWritePos(stream4.getWritePos() - 1);
       (stream4 as any).putByte(1);
-      expect(stream2.readString()).toStrictEqual(["", false]);
-      expect(stream2.getReadPos()).toBe(17);
+      expect(stream4.readString()).toStrictEqual(["", false]);
+      expect(stream4.getReadPos()).toBe(17);
     }
+
+    // read string utf8 error
+    const stream5: RPCStream = new RPCStream();
+    (stream5 as any).putBytes([
+      0x9E, 0xFF, 0x9F, 0x98, 0x80, 0xE2, 0x98, 0x98, 0xEF, 0xB8,
+      0x8F, 0xF0, 0x9F, 0x80, 0x84, 0xEF, 0xB8, 0x8F, 0xC2, 0xA9,
+      0xEF, 0xB8, 0x8F, 0xF0, 0x9F, 0x8C, 0x88, 0xF0, 0x9F, 0x8E,
+      0xA9, 0x00,
+    ]);
+    expect(stream5.readString()).toStrictEqual(["", false]);
+    expect(stream5.getReadPos()).toBe(17);
+
+    // read string utf8 error
+    const stream6: RPCStream = new RPCStream();
+    (stream6 as any).putBytes([
+      0xBF, 0x6D, 0x00, 0x00, 0x00, 0xFF, 0x9F, 0x98, 0x80, 0xE2,
+      0x98, 0x98, 0xEF, 0xB8, 0x8F, 0xF0, 0x9F, 0x80, 0x84, 0xEF,
+      0xB8, 0x8F, 0xC2, 0xA9, 0xEF, 0xB8, 0x8F, 0xF0, 0x9F, 0x8C,
+      0x88, 0xF0, 0x9F, 0x8E, 0xA9, 0xF0, 0x9F, 0x98, 0x9B, 0xF0,
+      0x9F, 0x91, 0xA9, 0xE2, 0x80, 0x8D, 0xF0, 0x9F, 0x91, 0xA9,
+      0xE2, 0x80, 0x8D, 0xF0, 0x9F, 0x91, 0xA6, 0xF0, 0x9F, 0x91,
+      0xA8, 0xE2, 0x80, 0x8D, 0xF0, 0x9F, 0x91, 0xA9, 0xE2, 0x80,
+      0x8D, 0xF0, 0x9F, 0x91, 0xA6, 0xE2, 0x80, 0x8D, 0xF0, 0x9F,
+      0x91, 0xA6, 0xF0, 0x9F, 0x91, 0xBC, 0xF0, 0x9F, 0x97, 0xA3,
+      0xF0, 0x9F, 0x91, 0x91, 0xF0, 0x9F, 0x91, 0x9A, 0xF0, 0x9F,
+      0x91, 0xB9, 0xF0, 0x9F, 0x91, 0xBA, 0xF0, 0x9F, 0x8C, 0xB3,
+      0xF0, 0x9F, 0x8D, 0x8A, 0x00,
+    ]);
+    expect(stream6.readString()).toStrictEqual(["", false]);
+    expect(stream6.getReadPos()).toBe(17);
+
+    // read string length error
+    const stream7: RPCStream = new RPCStream();
+    (stream7 as any).putBytes([
+      0xBF, 0x2F, 0x00, 0x00, 0x00, 0x61, 0x61, 0x61, 0x61, 0x61,
+      0x61, 0x61, 0x61, 0x61, 0x61, 0x61, 0x61, 0x61, 0x61, 0x61,
+      0x61, 0x61, 0x61, 0x61, 0x61, 0x61, 0x61, 0x61, 0x61, 0x61,
+      0x61, 0x61, 0x61, 0x61, 0x61, 0x61, 0x61, 0x61, 0x61, 0x61,
+      0x61, 0x61, 0x61, 0x61, 0x61, 0x61, 0x61, 0x61, 0x61, 0x61,
+      0x61, 0x61, 0x61, 0x61, 0x61, 0x61, 0x61, 0x61, 0x61, 0x61,
+      0x61, 0x61, 0x61, 0x61, 0x61, 0x61, 0x61, 0x61, 0x00,
+    ]);
+    expect(stream7.readString()).toStrictEqual(["", false]);
+    expect(stream7.getReadPos()).toBe(17);
   });
 
   test("RPCStream_readBytes", () => {
@@ -784,10 +889,25 @@ describe("stream tests", () => {
       // type not match
       const stream3: RPCStream = new RPCStream();
       (stream3 as any).putByte(13);
-      expect(stream2.readBytes())
+      expect(stream3.readBytes())
         .toStrictEqual([new Uint8Array([]), false]);
-      expect(stream2.getReadPos()).toBe(17);
+      expect(stream3.getReadPos()).toBe(17);
     }
+
+    // read bytes length error
+    const stream4: RPCStream = new RPCStream();
+    (stream4 as any).putBytes([
+      0xFF, 0x2F, 0x00, 0x00, 0x00, 0x61, 0x61, 0x61, 0x61, 0x61,
+      0x61, 0x61, 0x61, 0x61, 0x61, 0x61, 0x61, 0x61, 0x61, 0x61,
+      0x61, 0x61, 0x61, 0x61, 0x61, 0x61, 0x61, 0x61, 0x61, 0x61,
+      0x61, 0x61, 0x61, 0x61, 0x61, 0x61, 0x61, 0x61, 0x61, 0x61,
+      0x61, 0x61, 0x61, 0x61, 0x61, 0x61, 0x61, 0x61, 0x61, 0x61,
+      0x61, 0x61, 0x61, 0x61, 0x61, 0x61, 0x61, 0x61, 0x61, 0x61,
+      0x61, 0x61, 0x61, 0x61, 0x61, 0x61, 0x61, 0x61,
+    ]);
+    expect(stream4.readBytes())
+      .toStrictEqual([new Uint8Array([]), false]);
+    expect(stream4.getReadPos()).toBe(17);
   });
 
   test("RPCStream_readArray", () => {
@@ -811,8 +931,8 @@ describe("stream tests", () => {
       // type not match
       const stream3: RPCStream = new RPCStream();
       (stream3 as any).putByte(13);
-      expect(stream2.readArray()).toStrictEqual([[], false]);
-      expect(stream2.getReadPos()).toBe(17);
+      expect(stream3.readArray()).toStrictEqual([[], false]);
+      expect(stream3.getReadPos()).toBe(17);
 
       // error in stream
       const stream4: RPCStream = new RPCStream();
@@ -820,8 +940,8 @@ describe("stream tests", () => {
       if ((v[0] as Array<any>).length > 0) {
         stream4.setWritePos(stream4.getWritePos() - 1);
         (stream4 as any).putByte(13);
-        expect(stream2.readArray()).toStrictEqual([[], false]);
-        expect(stream2.getReadPos()).toBe(17);
+        expect(stream4.readArray()).toStrictEqual([[], false]);
+        expect(stream4.getReadPos()).toBe(17);
       }
 
       // error in stream
@@ -829,8 +949,8 @@ describe("stream tests", () => {
       (stream5 as any).putBytes([
         0x41, 0x07, 0x00, 0x00, 0x00, 0x02, 0x02,
       ]);
-      expect(stream2.readArray()).toStrictEqual([[], false]);
-      expect(stream2.getReadPos()).toBe(17);
+      expect(stream5.readArray()).toStrictEqual([[], false]);
+      expect(stream5.getReadPos()).toBe(17);
     }
   });
 
@@ -856,9 +976,9 @@ describe("stream tests", () => {
       // type not match
       const stream3: RPCStream = new RPCStream();
       (stream3 as any).putByte(13);
-      expect(stream2.readMap())
+      expect(stream3.readMap())
         .toStrictEqual([new Map<string, any>(), false]);
-      expect(stream2.getReadPos()).toBe(17);
+      expect(stream3.getReadPos()).toBe(17);
 
       // error in stream
       const stream4: RPCStream = new RPCStream();
@@ -866,9 +986,9 @@ describe("stream tests", () => {
       if ((v[0] as Array<any>).length > 0) {
         stream4.setWritePos(stream4.getWritePos() - 1);
         (stream4 as any).putByte(13);
-        expect(stream2.readMap())
+        expect(stream4.readMap())
           .toStrictEqual([new Map<string, any>(), false]);
-        expect(stream2.getReadPos()).toBe(17);
+        expect(stream4.getReadPos()).toBe(17);
       }
 
       // error in stream, length error
@@ -876,9 +996,9 @@ describe("stream tests", () => {
       (stream5 as any).putBytes([
         0x61, 0x0A, 0x00, 0x00, 0x00, 0x81, 0x31, 0x00, 0x02, 0x02,
       ]);
-      expect(stream2.readMap())
+      expect(stream5.readMap())
         .toStrictEqual([new Map<string, any>(), false]);
-      expect(stream2.getReadPos()).toBe(17);
+      expect(stream5.getReadPos()).toBe(17);
 
       // error in stream, key error
       const stream6: RPCStream = new RPCStream();
@@ -889,16 +1009,16 @@ describe("stream tests", () => {
         stream6.setWritePos(17 + 9);
         (stream6 as any).putByte(13);
         stream6.setWritePos(wPos);
-        expect(stream2.readMap())
+        expect(stream6.readMap())
           .toStrictEqual([new Map<string, any>(), false]);
-        expect(stream2.getReadPos()).toBe(17);
+        expect(stream6.getReadPos()).toBe(17);
       } else if (mapSize > 0) {
         stream6.setWritePos(17 + 5);
         (stream6 as any).putByte(13);
         stream6.setWritePos(wPos);
-        expect(stream2.readMap())
+        expect(stream6.readMap())
           .toStrictEqual([new Map<string, any>(), false]);
-        expect(stream2.getReadPos()).toBe(17);
+        expect(stream6.getReadPos()).toBe(17);
       }
     }
   });

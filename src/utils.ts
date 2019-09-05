@@ -20,7 +20,11 @@ function stringToUTF8(v: string): Array<number> {
   while ((ch = v.charCodeAt(strPos++)) > 0) {
     if (ch >= 0xD800 && ch <= 0xDBFF) {
       let low: number = v.charCodeAt(strPos++);
-      ch = (((ch & 0x3FF) << 10) | (low & 0x3FF)) + 65536;
+      if (low >= 0xDC00 && low <= 0xDFFF) {
+        ch = (((ch & 0x3FF) << 10) | (low & 0x3FF)) + 65536;
+      } else {
+        return [];
+      }
     }
     if (ch < 128) {
       ret.push(ch);
@@ -67,6 +71,9 @@ function utf8ToString(
       retArray.push(ch);
     } else if (ch < 224) {
       if (idx + 1 < byteLen) {
+        if ((v[idx + 1] & 0xC0) !== 0x80) {
+          return ["", false];
+        }
         const unicode: number =
           ((ch & 0x1F) << 6) |
           (v[idx + 1] & 0x3F);
@@ -77,6 +84,12 @@ function utf8ToString(
       }
     } else if (ch < 240) {
       if (idx + 2 < byteLen) {
+        if (
+          (v[idx + 1] & 0xC0) !== 0x80 ||
+          (v[idx + 2] & 0xC0) !== 0x80
+        ) {
+          return ["", false];
+        }
         const unicode: number =
           ((ch & 0x0F) << 12) |
           ((v[idx + 1] & 0x3F) << 6) |
@@ -88,6 +101,13 @@ function utf8ToString(
       }
     } else if (ch < 248) {
       if (idx + 3 < byteLen) {
+        if (
+          (v[idx + 1] & 0xC0) !== 0x80 ||
+          (v[idx + 2] & 0xC0) !== 0x80 ||
+          (v[idx + 3] & 0xC0) !== 0x80
+        ) {
+          return ["", false];
+        }
         const unicode: number =
           ((ch & 0x07) << 18) |
           ((v[idx + 1] & 0x3F) << 12) |
