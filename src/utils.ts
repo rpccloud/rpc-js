@@ -69,7 +69,7 @@ function utf8ToString(
       if (idx + 1 < byteLen) {
         const unicode: number =
           ((ch & 0x1F) << 6) |
-          (v[idx+1] & 0x3F);
+          (v[idx + 1] & 0x3F);
         idx += 2;
         retArray.push(unicode);
       } else {
@@ -79,8 +79,8 @@ function utf8ToString(
       if (idx + 2 < byteLen) {
         const unicode: number =
           ((ch & 0x0F) << 12) |
-          ((v[idx+1] & 0x3F) << 6) |
-          (v[idx+2] & 0x3F);
+          ((v[idx + 1] & 0x3F) << 6) |
+          (v[idx + 2] & 0x3F);
         idx += 3;
         retArray.push(unicode);
       } else {
@@ -90,9 +90,9 @@ function utf8ToString(
       if (idx + 3 < byteLen) {
         const unicode: number =
           ((ch & 0x07) << 18) |
-          ((v[idx+1] & 0x3F) << 12) |
-          ((v[idx+2] & 0x3F) << 6) |
-          (v[idx+3] & 0x3F);
+          ((v[idx + 1] & 0x3F) << 12) |
+          ((v[idx + 2] & 0x3F) << 6) |
+          (v[idx + 3] & 0x3F);
         idx += 4;
         if (unicode >= 0x0000 && unicode <= 0xD7FF) {
           retArray.push(unicode);
@@ -108,7 +108,6 @@ function utf8ToString(
       return ["", false];
     }
   }
-
   return [String.fromCodePoint(...retArray), true];
 }
 
