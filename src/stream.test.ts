@@ -471,6 +471,16 @@ describe("stream tests", () => {
       stream.writeBool(v[0]);
       expect(stream.getBuffer().slice(17)).toStrictEqual(v[1]);
     }
+
+    // null
+    const bug1: RPCStream = new RPCStream();
+    expect(bug1.writeBool(null as any)).toBe(false);
+    expect(bug1.getWritePos()).toBe(17);
+
+    // undefined
+    const bug2: RPCStream = new RPCStream();
+    expect(bug2.writeBool(undefined as any)).toBe(false);
+    expect(bug2.getWritePos()).toBe(17);
   });
 
   test("RPCStream_writeFloat64", () => {
@@ -484,6 +494,16 @@ describe("stream tests", () => {
     const bug1: RPCStream = new RPCStream();
     expect(bug1.writeFloat64(new RPCFloat64(NaN))).toBe(false);
     expect(bug1.getWritePos()).toBe(17);
+
+    // null
+    const bug2: RPCStream = new RPCStream();
+    expect(bug2.writeFloat64(null as any)).toBe(false);
+    expect(bug2.getWritePos()).toBe(17);
+
+    // undefined
+    const bug3: RPCStream = new RPCStream();
+    expect(bug3.writeFloat64(undefined as any)).toBe(false);
+    expect(bug3.getWritePos()).toBe(17);
   });
 
   test("RPCStream_writeInt64", () => {
@@ -497,6 +517,16 @@ describe("stream tests", () => {
     const bug1: RPCStream = new RPCStream();
     expect(bug1.writeInt64(new RPCInt64(NaN))).toBe(false);
     expect(bug1.getWritePos()).toBe(17);
+
+    // null
+    const bug2: RPCStream = new RPCStream();
+    expect(bug2.writeInt64(null as any)).toBe(false);
+    expect(bug2.getWritePos()).toBe(17);
+
+    // undefined
+    const bug3: RPCStream = new RPCStream();
+    expect(bug3.writeInt64(undefined as any)).toBe(false);
+    expect(bug3.getWritePos()).toBe(17);
   });
 
   test("RPCStream_writeUint64", () => {
@@ -510,6 +540,16 @@ describe("stream tests", () => {
     const bug1: RPCStream = new RPCStream();
     expect(bug1.writeUint64(new RPCUint64(NaN))).toBe(false);
     expect(bug1.getWritePos()).toBe(17);
+
+    // null
+    const bug2: RPCStream = new RPCStream();
+    expect(bug2.writeUint64(null as any)).toBe(false);
+    expect(bug2.getWritePos()).toBe(17);
+
+    // undefined
+    const bug3: RPCStream = new RPCStream();
+    expect(bug3.writeUint64(undefined as any)).toBe(false);
+    expect(bug3.getWritePos()).toBe(17);
   });
 
   test("RPCStream_writeString", () => {
@@ -524,11 +564,16 @@ describe("stream tests", () => {
     expect(bug1.writeString(null as any)).toBe(false);
     expect(bug1.getWritePos()).toBe(17);
 
+    // undefined
+    const bug2: RPCStream = new RPCStream();
+    expect(bug2.writeString(undefined as any)).toBe(false);
+    expect(bug2.getWritePos()).toBe(17);
+
     // bad string
     let badString: string = String.fromCharCode(2097152);
-    const bug2: RPCStream = new RPCStream();
-    expect(bug2.writeString(badString)).toBe(false);
-    expect(bug2.getWritePos()).toBe(17);
+    const bug3: RPCStream = new RPCStream();
+    expect(bug3.writeString(badString)).toBe(false);
+    expect(bug3.getWritePos()).toBe(17);
   });
 
   test("RPCStream_writeBytes", () => {
@@ -542,6 +587,11 @@ describe("stream tests", () => {
     const bug1: RPCStream = new RPCStream();
     expect(bug1.writeBytes(null as any)).toBe(false);
     expect(bug1.getWritePos()).toBe(17);
+
+    // undefined
+    const bug2: RPCStream = new RPCStream();
+    expect(bug2.writeBytes(null as any)).toBe(false);
+    expect(bug2.getWritePos()).toBe(17);
   });
 
   test("RPCStream_writeArray", () => {
@@ -556,10 +606,15 @@ describe("stream tests", () => {
     expect(bug1.writeArray(null as any)).toBe(false);
     expect(bug1.getWritePos()).toBe(17);
 
-    // contain other types
+    // undefined
     const bug2: RPCStream = new RPCStream();
-    expect(bug2.writeArray([true, 1, "hi"])).toBe(false);
+    expect(bug2.writeArray(undefined as any)).toBe(false);
     expect(bug2.getWritePos()).toBe(17);
+
+    // contain other types
+    const bug3: RPCStream = new RPCStream();
+    expect(bug3.writeArray([true, 1, "hi"])).toBe(false);
+    expect(bug3.getWritePos()).toBe(17);
   });
 
   test("RPCStream_writeMap", () => {
@@ -574,19 +629,24 @@ describe("stream tests", () => {
     expect(bug1.writeMap(null as any)).toBe(false);
     expect(bug1.getWritePos()).toBe(17);
 
-    // contain other types
+    // undefined
     const bug2: RPCStream = new RPCStream();
-    expect(bug2.writeMap(new Map([
-      ["foo", 3],
-    ]))).toBe(false);
+    expect(bug2.writeMap(undefined as any)).toBe(false);
     expect(bug2.getWritePos()).toBe(17);
 
-    // map key error
+    // contain other types
     const bug3: RPCStream = new RPCStream();
     expect(bug3.writeMap(new Map([
-      [String.fromCharCode(2097152), true],
+      ["foo", 3],
     ]))).toBe(false);
     expect(bug3.getWritePos()).toBe(17);
+
+    // map key error
+    const bug4: RPCStream = new RPCStream();
+    expect(bug4.writeMap(new Map([
+      [String.fromCharCode(2097152), true],
+    ]))).toBe(false);
+    expect(bug4.getWritePos()).toBe(17);
   });
 
   test("RPCStream_write", () => {
@@ -610,6 +670,11 @@ describe("stream tests", () => {
     const bug2: RPCStream = new RPCStream();
     expect(bug2.write(1)).toBe(false);
     expect(bug2.getWritePos()).toBe(17);
+
+    // undefined
+    const bug3: RPCStream = new RPCStream();
+    expect(bug3.write(undefined)).toBe(false);
+    expect(bug3.getWritePos()).toBe(17);
   });
 
   test("RPCStream_readNull", () => {

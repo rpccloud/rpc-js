@@ -130,15 +130,25 @@ export class RPCStream {
     this.putByte(1);
   }
 
-  public writeBool(v: boolean): void {
+  public writeBool(v: boolean): boolean {
+    if (v === null || v === undefined) {
+      return false;
+    }
+
     if (v) {
       this.putByte(2);
+      return true;
     } else {
       this.putByte(3);
+      return false;
     }
   }
 
   public writeFloat64(value: RPCFloat64): boolean {
+    if (value === null || value === undefined) {
+      return false;
+    }
+
     const v: number = value.toNumber();
     if (v === 0) {
       this.putByte(4);
@@ -155,6 +165,10 @@ export class RPCStream {
   }
 
   public writeInt64(value: RPCInt64): boolean {
+    if (value === null || value === undefined) {
+      return false;
+    }
+
     let v: number = value.toNumber();
 
     if (v > -8 && v < 33) {
@@ -216,6 +230,10 @@ export class RPCStream {
   }
 
   public writeUint64(value: RPCUint64): boolean {
+    if (value === null || value === undefined) {
+      return false;
+    }
+
     let v: number = value.toNumber();
 
     if (v < 10) {
@@ -266,7 +284,7 @@ export class RPCStream {
   }
 
   public writeString(v: string): boolean {
-    if (v === null) {
+    if (v === null || v === undefined) {
       return false;
     }
 
@@ -307,9 +325,10 @@ export class RPCStream {
   }
 
   public writeBytes(v: Uint8Array): boolean {
-    if (v === null) {
+    if (v === null || v === undefined) {
       return false;
     }
+
     let length: number = v.byteLength;
 
     if (length == 0) {
@@ -338,7 +357,7 @@ export class RPCStream {
   }
 
   public writeArray(v: Array<any>): boolean {
-    if (v === null) {
+    if (v === null || v === undefined) {
       return false;
     }
 
@@ -390,7 +409,7 @@ export class RPCStream {
   }
 
   public writeMap(v: Map<string, any>): boolean {
-    if (v === null) {
+    if (v === null || v === undefined) {
       return false;
     }
 
@@ -443,6 +462,10 @@ export class RPCStream {
   }
 
   public write(v: any): boolean {
+    if (v === undefined) {
+      return false;
+    }
+
     if (v === null) {
       this.writeNull();
       return true;
