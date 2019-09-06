@@ -1,5 +1,4 @@
 import {RPCStream} from "./stream";
-import {isUint8ArrayEquals} from "./utils";
 import {RPCFloat64, RPCInt64, RPCUint64} from "./types";
 
 const testCollections: Map<string, Array<Array<any>>> = new Map([
@@ -310,12 +309,10 @@ describe("stream tests", () => {
     const stream: RPCStream = new RPCStream();
     expect(stream.getReadPos()).toBe(17);
     expect(stream.getWritePos()).toBe(17);
-    expect(isUint8ArrayEquals(
-      stream.getBuffer(),
-      new Uint8Array([
+    expect(stream.getBuffer())
+      .toStrictEqual(new Uint8Array([
         1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-      ]),
-    )).toBe(true);
+      ]));
   });
 
   test("RPCStream_putByte", () => {
@@ -327,7 +324,7 @@ describe("stream tests", () => {
       arr[i] = i;
       (stream as any).putByte(i);
     }
-    expect(isUint8ArrayEquals(stream.getBuffer(), arr)).toBe(true);
+    expect(stream.getBuffer()).toStrictEqual(arr);
   });
 
   test("RPCStream_putBytes", () => {
@@ -336,18 +333,13 @@ describe("stream tests", () => {
 
     // empty bytes
     (stream as any).putBytes([]);
-    expect(isUint8ArrayEquals(
-      stream.getBuffer(),
-      new Uint8Array(0),
-    )).toBe(true);
+    expect(stream.getBuffer()).toStrictEqual(new Uint8Array(0));
 
     // small bytes
     stream.setWritePos(0);
     (stream as any).putBytes([1, 2, 3]);
-    expect(isUint8ArrayEquals(
-      stream.getBuffer(),
-      new Uint8Array([1, 2, 3]),
-    )).toBe(true);
+    expect(stream.getBuffer())
+      .toStrictEqual(new Uint8Array([1, 2, 3]));
 
     // large bytes
     const largeNumberArr: Array<number> = [];
@@ -356,10 +348,7 @@ describe("stream tests", () => {
     }
     stream.setWritePos(0);
     (stream as any).putBytes(largeNumberArr);
-    expect(isUint8ArrayEquals(
-      stream.getBuffer(),
-      new Uint8Array(largeNumberArr),
-    )).toBe(true);
+    expect(stream.getBuffer()).toStrictEqual(new Uint8Array(largeNumberArr));
   });
 
   test("RPCStream_getReadPos_setReadPos", () => {
@@ -472,10 +461,7 @@ describe("stream tests", () => {
     for (let v of testCollections.get("null")!) {
       const stream: RPCStream = new RPCStream();
       stream.writeNull();
-      expect(isUint8ArrayEquals(
-        stream.getBuffer().slice(17),
-        v[1],
-      )).toBe(true);
+      expect(stream.getBuffer().slice(17)).toStrictEqual(v[1]);
     }
   });
 
@@ -483,10 +469,7 @@ describe("stream tests", () => {
     for (let v of testCollections.get("bool")!) {
       const stream: RPCStream = new RPCStream();
       stream.writeBool(v[0]);
-      expect(isUint8ArrayEquals(
-        stream.getBuffer().slice(17),
-        v[1],
-      )).toBe(true);
+      expect(stream.getBuffer().slice(17)).toStrictEqual(v[1]);
     }
   });
 
@@ -494,10 +477,7 @@ describe("stream tests", () => {
     for (let v of testCollections.get("float64")!) {
       const stream: RPCStream = new RPCStream();
       expect(stream.writeFloat64(v[0])).toBe(true);
-      expect(isUint8ArrayEquals(
-        stream.getBuffer().slice(17),
-        v[1],
-      )).toBe(true);
+      expect(stream.getBuffer().slice(17)).toStrictEqual(v[1]);
     }
 
     // NaN
@@ -510,10 +490,7 @@ describe("stream tests", () => {
     for (let v of testCollections.get("int64")!) {
       const stream: RPCStream = new RPCStream();
       expect(stream.writeInt64(v[0])).toBe(true);
-      expect(isUint8ArrayEquals(
-        stream.getBuffer().slice(17),
-        v[1],
-      )).toBe(true);
+      expect(stream.getBuffer().slice(17)).toStrictEqual(v[1]);
     }
 
     // NaN
@@ -526,10 +503,7 @@ describe("stream tests", () => {
     for (let v of testCollections.get("uint64")!) {
       const stream: RPCStream = new RPCStream();
       expect(stream.writeUint64(v[0])).toBe(true);
-      expect(isUint8ArrayEquals(
-        stream.getBuffer().slice(17),
-        v[1],
-      )).toBe(true);
+      expect(stream.getBuffer().slice(17)).toStrictEqual(v[1]);
     }
 
     // NaN
@@ -542,10 +516,7 @@ describe("stream tests", () => {
     for (let v of testCollections.get("string")!) {
       const stream: RPCStream = new RPCStream();
       expect(stream.writeString(v[0])).toBe(true);
-      expect(isUint8ArrayEquals(
-        stream.getBuffer().slice(17),
-        v[1],
-      )).toBe(true);
+      expect(stream.getBuffer().slice(17)).toStrictEqual(v[1]);
     }
 
     // null
@@ -564,10 +535,7 @@ describe("stream tests", () => {
     for (let v of testCollections.get("bytes")!) {
       const stream: RPCStream = new RPCStream();
       expect(stream.writeBytes(v[0])).toBe(true);
-      expect(isUint8ArrayEquals(
-        stream.getBuffer().slice(17),
-        v[1],
-      )).toBe(true);
+      expect(stream.getBuffer().slice(17)).toStrictEqual(v[1]);
     }
 
     // null
@@ -580,10 +548,7 @@ describe("stream tests", () => {
     for (let v of testCollections.get("array")!) {
       const stream: RPCStream = new RPCStream();
       expect(stream.writeArray(v[0])).toBe(true);
-      expect(isUint8ArrayEquals(
-        stream.getBuffer().slice(17),
-        v[1],
-      )).toBe(true);
+      expect(stream.getBuffer().slice(17)).toStrictEqual(v[1]);
     }
 
     // null
@@ -601,10 +566,7 @@ describe("stream tests", () => {
     for (let v of testCollections.get("map")!) {
       const stream: RPCStream = new RPCStream();
       expect(stream.writeMap(v[0])).toBe(true);
-      expect(isUint8ArrayEquals(
-        stream.getBuffer().slice(17),
-        v[1],
-      )).toBe(true);
+      expect(stream.getBuffer().slice(17)).toStrictEqual(v[1]);
     }
 
     // null
@@ -635,10 +597,7 @@ describe("stream tests", () => {
       for (let v of testCollections.get(key)!) {
         const stream: RPCStream = new RPCStream();
         expect(stream.write(v[0])).toBe(true);
-        expect(isUint8ArrayEquals(
-          stream.getBuffer().slice(17),
-          v[1],
-        )).toBe(true);
+        expect(stream.getBuffer().slice(17)).toStrictEqual(v[1]);
       }
     }
 

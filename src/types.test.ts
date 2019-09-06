@@ -1,5 +1,4 @@
 import {RPCInt64, RPCUint64} from "./types";
-import {isUint8ArrayEquals} from "./utils";
 
 describe("RPCInt64 tests", () => {
   test("RPCInt64_fromBytes", () => {
@@ -38,58 +37,47 @@ describe("RPCInt64 tests", () => {
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
       ]));
     expect(isNaN(notSafetyInt1.toNumber())).toBe(true);
-    expect(isUint8ArrayEquals(
-      notSafetyInt1.getBytes(),
-      new Uint8Array([
+    expect(notSafetyInt1.getBytes())
+      .toStrictEqual(new Uint8Array([
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-      ]),
-    )).toBe(true);
+      ]));
 
     const notSafetyInt2: RPCInt64 = RPCInt64.fromBytes(
       new Uint8Array([
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xE0, 0x7F,
       ]));
     expect(isNaN(notSafetyInt2.toNumber())).toBe(true);
-    expect(isUint8ArrayEquals(
-      notSafetyInt2.getBytes(),
-      new Uint8Array([
+    expect(notSafetyInt2.getBytes())
+      .toStrictEqual(new Uint8Array([
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xE0, 0x7F,
-      ]),
-    )).toBe(true);
+      ]));
 
     const notSafetyInt3: RPCInt64 = RPCInt64.fromBytes(
       new Uint8Array([
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x20, 0x80,
       ]));
     expect(isNaN(notSafetyInt3.toNumber())).toBe(true);
-    expect(isUint8ArrayEquals(
-      notSafetyInt3.getBytes(),
-      new Uint8Array([
+    expect(notSafetyInt3.getBytes())
+      .toStrictEqual(new Uint8Array([
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x20, 0x80,
-      ]),
-    )).toBe(true);
+      ]));
 
     const notSafetyInt4: RPCInt64 = RPCInt64.fromBytes(
       new Uint8Array([
         0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
       ]));
     expect(isNaN(notSafetyInt4.toNumber())).toBe(true);
-    expect(isUint8ArrayEquals(
-      notSafetyInt4.getBytes(),
-      new Uint8Array([
+    expect(notSafetyInt4.getBytes())
+      .toStrictEqual(new Uint8Array([
         0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-      ]),
-    )).toBe(true);
+      ]));
 
     const bugInt: RPCInt64 = RPCInt64.fromBytes(
       new Uint8Array([
         0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
       ]));
     expect(isNaN(bugInt.toNumber())).toBe(true);
-    expect(isUint8ArrayEquals(
-      bugInt.getBytes(),
-      new Uint8Array(0),
-    )).toBe(true);
+    expect(bugInt.getBytes()).toStrictEqual(new Uint8Array(0));
   });
 });
 
@@ -115,33 +103,26 @@ describe("RPCUint64 tests", () => {
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x20, 0x00,
       ]));
     expect(isNaN(notSafetyUint1.toNumber())).toBe(true);
-    expect(isUint8ArrayEquals(
-      notSafetyUint1.getBytes(),
-      new Uint8Array([
+    expect(notSafetyUint1.getBytes())
+      .toStrictEqual(new Uint8Array([
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x20, 0x00,
-      ]),
-    )).toBe(true);
+      ]));
 
     const notSafetyUint2: RPCUint64 = RPCUint64.fromBytes(
       new Uint8Array([
         0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
       ]));
     expect(isNaN(notSafetyUint2.toNumber())).toBe(true);
-    expect(isUint8ArrayEquals(
-      notSafetyUint2.getBytes(),
-      new Uint8Array([
+    expect(notSafetyUint2.getBytes())
+      .toStrictEqual(new Uint8Array([
         0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-      ]),
-    )).toBe(true);
+      ]));
 
     const bugUint: RPCUint64 = RPCUint64.fromBytes(
       new Uint8Array([
         0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
       ]));
     expect(isNaN(bugUint.toNumber())).toBe(true);
-    expect(isUint8ArrayEquals(
-      bugUint.getBytes(),
-      new Uint8Array(0),
-    )).toBe(true);
+    expect(bugUint.getBytes()).toStrictEqual(new Uint8Array(0));
   });
 });
