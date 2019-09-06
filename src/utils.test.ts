@@ -23,5 +23,90 @@ describe("utils tests", () => {
       true,
     ]);
   });
+
+  test("utf8ToString", () => {
+    expect(utf8ToString(undefined as any))
+      .toStrictEqual(["", false]);
+
+    expect(utf8ToString(null as any))
+      .toStrictEqual(["", false]);
+
+    expect(utf8ToString(new Uint8Array([])))
+      .toStrictEqual(["", false]);
+
+    // ok
+    expect(utf8ToString(new Uint8Array([
+      0x01, 0x7F, 0xC2, 0x80, 0xDF, 0xBF, 0xE0, 0xA0, 0x80, 0xED,
+      0x9F, 0xBF, 0xEE, 0x80, 0x80, 0xEF, 0xBF, 0xBF, 0xF0, 0x90,
+      0x80, 0x80, 0xF4, 0x8F, 0xBF, 0xBF,
+    ]))).toStrictEqual([
+      String.fromCodePoint(...[
+        0x01, 0x7F, 0x80, 0x07FF, 0x0800, 0xD7FF, 0xE000, 0xFFFF,
+        0x10000, 0x10FFFF,
+      ]),
+      true,
+    ]);
+
+    expect(utf8ToString(
+      new Uint8Array([
+        0x01,
+      ]),
+      -1,
+      1,
+    )).toStrictEqual(["", false]);
+    expect(utf8ToString(
+      new Uint8Array([
+        0x01,
+      ]),
+      0,
+      2,
+    )).toStrictEqual(["", false]);
+    expect(utf8ToString(
+      new Uint8Array([
+        0x01, 0x02, 0x03,
+      ]),
+      2,
+      1,
+    )).toStrictEqual(["", false]);
+
+    expect(utf8ToString(new Uint8Array([
+      0xC2,
+    ]))).toStrictEqual(["", false]);
+    expect(utf8ToString(new Uint8Array([
+      0xC2, 0x00,
+    ]))).toStrictEqual(["", false]);
+    expect(utf8ToString(new Uint8Array([
+      0xC1, 0x80,
+    ]))).toStrictEqual(["", false]);
+
+    expect(utf8ToString(new Uint8Array([
+      0xE0, 0xA0,
+    ]))).toStrictEqual(["", false]);
+    expect(utf8ToString(new Uint8Array([
+      0xE0, 0xA0, 0x00,
+    ]))).toStrictEqual(["", false]);
+    expect(utf8ToString(new Uint8Array([
+      0xE0, 0x80, 0x80,
+    ]))).toStrictEqual(["", false]);
+
+    expect(utf8ToString(new Uint8Array([
+      0xF0, 0x90, 0x80,
+    ]))).toStrictEqual(["", false]);
+    expect(utf8ToString(new Uint8Array([
+      0xF0, 0x90, 0x00, 0x80,
+    ]))).toStrictEqual(["", false]);
+    expect(utf8ToString(new Uint8Array([
+      0xF0, 0x80, 0x80, 0x80,
+    ]))).toStrictEqual(["", false]);
+
+    expect(utf8ToString(new Uint8Array([
+      0xF8, 0x8F, 0xBF, 0xBF,
+    ]))).toStrictEqual(["", false]);
+    expect(utf8ToString(new Uint8Array([
+      0xF8, 0x8F, 0xBF, 0xBF,
+    ]))).toStrictEqual(["", false]);
+
+
+  });
 });
 

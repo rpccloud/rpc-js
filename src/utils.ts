@@ -7,28 +7,22 @@ function stringToUTF8(v: string): Array<number> {
   while ((ch = v.charCodeAt(strPos++)) > 0) {
     if (ch >= 0xD800 && ch <= 0xDBFF) {
       let low: number = v.charCodeAt(strPos++);
-      if (low >= 0xDC00 && low <= 0xDFFF) {
-        ch = (((ch & 0x3FF) << 10) | (low & 0x3FF)) + 65536;
-      } else {
-        return [];
-      }
+      ch = (((ch & 0x3FF) << 10) | (low & 0x3FF)) + 65536;
     }
     if (ch < 128) {
       ret.push(ch);
     } else if (ch < 2048) {
-      ret.push((ch >>> 6) | 0xC0);
+      ret.push(((ch >>> 6) & 0xFF) | 0xC0);
       ret.push((ch & 0x3F) | 0x80);
     } else if (ch < 65536) {
-      ret.push((ch >>> 12) | 0xE0);
-      ret.push(((ch >>> 6) & 0x3F) | 0x80);
-      ret.push((ch & 0x3F) | 0x80);
-    } else if (ch < 2097152) {
-      ret.push((ch >>> 18) | 0xF0);
-      ret.push(((ch >>> 12) & 0x3F) | 0x80);
+      ret.push(((ch >>> 12) & 0xFF) | 0xE0);
       ret.push(((ch >>> 6) & 0x3F) | 0x80);
       ret.push((ch & 0x3F) | 0x80);
     } else {
-      return [];
+      ret.push(((ch >>> 18) & 0xFF) | 0xF0);
+      ret.push(((ch >>> 12) & 0x3F) | 0x80);
+      ret.push(((ch >>> 6) & 0x3F) | 0x80);
+      ret.push((ch & 0x3F) | 0x80);
     }
   }
 
@@ -41,10 +35,14 @@ function utf8ToString(
   start?: number,
   end?: number,
 ): [string, boolean] {
+  if (v === null || v === undefined) {
+    return ["", false];
+  }
+
   const retArray: Array<number> = [];
   let idx: number = (start === undefined) ? 0 : start;
   let readEnd: number = (end === undefined) ? v.byteLength : end;
-  if (readEnd > v.byteLength || idx >= readEnd) {
+  if (idx < 0 || readEnd > v.byteLength || idx >= readEnd) {
     return ["", false];
   }
 
@@ -65,7 +63,11 @@ function utf8ToString(
           ((ch & 0x1F) << 6) |
           (v[idx + 1] & 0x3F);
         idx += 2;
-        retArray.push(unicode);
+        if (unicode >= 0x0080 && unicode <= 0x07FF) {
+          retArray.push(unicode);
+        } else {
+          return ["", false];
+        }
       } else {
         return ["", false];
       }
@@ -82,7 +84,13 @@ function utf8ToString(
           ((v[idx + 1] & 0x3F) << 6) |
           (v[idx + 2] & 0x3F);
         idx += 3;
-        retArray.push(unicode);
+        if (unicode >= 0x0800 && unicode <= 0xD7FF) {
+          retArray.push(unicode);
+        } else if (unicode >= 0xE000 && unicode <= 0xFFFF) {
+          retArray.push(unicode);
+        } else {
+          return ["", false];
+        }
       } else {
         return ["", false];
       }
@@ -101,15 +109,13 @@ function utf8ToString(
           ((v[idx + 2] & 0x3F) << 6) |
           (v[idx + 3] & 0x3F);
         idx += 4;
-        if (unicode >= 0x0000 && unicode <= 0xD7FF) {
-          retArray.push(unicode);
-        } else if (unicode >= 0xE000 && unicode <= 0xFFFF) {
-          retArray.push(unicode);
-        } else if (unicode >= 0x010000 && unicode <= 0x10FFFF) {
+        if (unicode >= 0x010000 && unicode <= 0x10FFFF) {
           retArray.push(unicode);
         } else {
           return ["", false];
         }
+      } else {
+        return ["", false];
       }
     } else {
       return ["", false];
