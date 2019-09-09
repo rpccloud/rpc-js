@@ -1,4 +1,4 @@
-import {stringToUTF8, utf8ToString} from "./utils";
+import {stringToUTF8, convertToIsoDateString, utf8ToString} from "./utils";
 
 describe("utils tests", () => {
   test("stringToUTF8_utf8ToString", () => {
@@ -105,8 +105,38 @@ describe("utils tests", () => {
     expect(utf8ToString(new Uint8Array([
       0xF8, 0x8F, 0xBF, 0xBF,
     ]))).toStrictEqual(["", false]);
+  });
 
+  test("toIsoDateString", () => {
+    let start: Date = new Date("1901-01-01T00:00:00+00:00");
 
+    for (let i: number = 0; i < 10000; i++) {
+      expect(new Date(convertToIsoDateString(start))).toStrictEqual(start);
+      start.setSeconds(start.getSeconds() + 23109922);
+    }
+
+    expect(convertToIsoDateString(null as any)).toStrictEqual("");
+    expect(convertToIsoDateString(undefined as any)).toStrictEqual("");
+
+    const date1: Date = new Date("2000-01-01T00:00:00.000+08:00");
+    date1.setFullYear(date1.getFullYear() + 10000);
+    expect(convertToIsoDateString(date1))
+      .toStrictEqual("9999-01-01T00:00:00.000+08:00");
+
+    const date2: Date = new Date("2009-11-01T00:00:00.009Z");
+    date2.setFullYear(date2.getFullYear() - 2000);
+    expect(convertToIsoDateString(date2).substr(0, 10))
+      .toStrictEqual("0009-11-01");
+
+    const date3: Date = new Date("2019-11-01T00:00:00.019Z");
+    date3.setFullYear(date3.getFullYear() - 2000);
+    expect(convertToIsoDateString(date3).substr(0, 10))
+      .toStrictEqual("0019-11-01");
+
+    const date4: Date = new Date("2319-11-01T00:00:00.319Z");
+    date4.setFullYear(date4.getFullYear() - 2000);
+    expect(convertToIsoDateString(date4).substr(0, 10))
+      .toStrictEqual("0319-11-01");
   });
 });
 

@@ -1,3 +1,32 @@
+function pad2(num: number): string {
+  let norm: number = Math.floor(Math.abs(num));
+  return (norm < 10 ? "0" : "") + norm.toString(10);
+}
+
+function pad3(num: number): string {
+  let norm: number = Math.floor(Math.abs(num));
+  if (norm < 10) {
+    return "00" + norm.toString(10);
+  } else if (norm < 100) {
+    return "0" + norm.toString(10);
+  } else {
+    return "" + norm.toString(10);
+  }
+}
+
+function pad4(num: number): string {
+  let norm: number = Math.floor(Math.abs(num));
+  if (norm < 10) {
+    return "000" + norm.toString(10);
+  } else if (norm < 100) {
+    return "00" + norm.toString(10);
+  } else if (norm < 1000) {
+    return "0" + norm.toString(10);
+  } else {
+    return "" + norm.toString(10);
+  }
+}
+
 export
 function stringToUTF8(v: string): Array<number> {
   let ret: Array<number> = [];
@@ -124,3 +153,24 @@ function utf8ToString(
   return [String.fromCodePoint(...retArray), true];
 }
 
+export
+function convertToIsoDateString(date: Date): string {
+  if (date === null || date === undefined) {
+    return "";
+  }
+  let tzo: number = -date.getTimezoneOffset();
+  let dif: string = tzo >= 0 ? "+" : "-";
+  let year: number = date.getFullYear();
+  if (year > 9999) {
+    year = 9999;
+  }
+  return pad4(year) +
+    "-" + pad2(date.getMonth() + 1) +
+    "-" + pad2(date.getDate()) +
+    "T" + pad2(date.getHours()) +
+    ":" + pad2(date.getMinutes()) +
+    ":" + pad2(date.getSeconds()) +
+    "." + pad3(date.getMilliseconds()) +
+    dif + pad2(tzo / 60) +
+    ":" + pad2(tzo % 60);
+}
