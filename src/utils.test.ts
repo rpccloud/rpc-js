@@ -128,7 +128,6 @@ describe("utils tests", () => {
     expect(new Date(convertToIsoDateString(date2)).toISOString())
       .toContain("0009-11-01");
 
-
     const date3: Date = new Date("2019-11-01T10:00:00.019Z");
     date3.setFullYear(date3.getFullYear() - 2000);
     expect(new Date(convertToIsoDateString(date3)).toISOString())
