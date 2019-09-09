@@ -108,7 +108,7 @@ describe("utils tests", () => {
   });
 
   test("toIsoDateString", () => {
-    let start: Date = new Date("1901-01-01T00:00:00+00:00");
+    let start: Date = new Date("1901-01-01T00:00:00.000Z");
 
     for (let i: number = 0; i < 10000; i++) {
       expect(new Date(convertToIsoDateString(start))).toStrictEqual(start);
@@ -118,25 +118,26 @@ describe("utils tests", () => {
     expect(convertToIsoDateString(null as any)).toStrictEqual("");
     expect(convertToIsoDateString(undefined as any)).toStrictEqual("");
 
-    const date1: Date = new Date("2000-01-01T00:00:00.000+08:00");
+    const date1: Date = new Date("2000-01-01T00:00:00.000Z");
     date1.setFullYear(date1.getFullYear() + 10000);
-    expect(convertToIsoDateString(date1))
-      .toStrictEqual("9999-01-01T00:00:00.000+08:00");
+    expect(new Date(convertToIsoDateString(date1)).toISOString())
+      .toStrictEqual("9999-01-01T00:00:00.000Z");
 
-    const date2: Date = new Date("2009-11-01T00:00:00.009Z");
+    const date2: Date = new Date("2009-11-01T10:00:00.009Z");
     date2.setFullYear(date2.getFullYear() - 2000);
-    expect(convertToIsoDateString(date2).substr(0, 10))
-      .toStrictEqual("0009-11-01");
+    expect(new Date(convertToIsoDateString(date2)).toISOString())
+      .toContain("0009-11-01");
 
-    const date3: Date = new Date("2019-11-01T00:00:00.019Z");
+
+    const date3: Date = new Date("2019-11-01T10:00:00.019Z");
     date3.setFullYear(date3.getFullYear() - 2000);
-    expect(convertToIsoDateString(date3).substr(0, 10))
-      .toStrictEqual("0019-11-01");
+    expect(new Date(convertToIsoDateString(date3)).toISOString())
+      .toContain("0019-11-01");
 
-    const date4: Date = new Date("2319-11-01T00:00:00.319Z");
+    const date4: Date = new Date("2319-11-01T10:00:00.319Z");
     date4.setFullYear(date4.getFullYear() - 2000);
-    expect(convertToIsoDateString(date4).substr(0, 10))
-      .toStrictEqual("0319-11-01");
+    expect(new Date(convertToIsoDateString(date4)).toISOString())
+      .toContain("0319-11-01");
   });
 });
 

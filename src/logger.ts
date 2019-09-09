@@ -13,26 +13,16 @@ const logMaskWarn: number = 4;
 const logMaskInfo: number = 8;
 const logMaskDebug: number = 16;
 
-type CallbackFunc = ((msg: string) => void) | null;
+export type CallbackFunc = ((msg: string) => void) | null;
 
-class LogSubscription {
-  private id: number;
-  private logger: Logger | null;
-  public onDebug: CallbackFunc;
-  public onInfo: CallbackFunc;
-  public onWarn: CallbackFunc;
-  public onError: CallbackFunc;
-  public onFatal: CallbackFunc;
-
-  private constructor(id: number, logger: Logger) {
-    this.id = id;
-    this.logger = logger;
-    this.onDebug = null;
-    this.onInfo = null;
-    this.onWarn = null;
-    this.onError = null;
-    this.onFatal = null;
-  }
+export class LogSubscription {
+  private id: number = 0;
+  private logger: Logger | null = null;
+  public onDebug: CallbackFunc = null;
+  public onInfo: CallbackFunc = null;
+  public onWarn: CallbackFunc = null;
+  public onError: CallbackFunc = null;
+  public onFatal: CallbackFunc = null;
 
   public close(): boolean {
     if (this.logger === null || this.logger === undefined) {
@@ -52,7 +42,7 @@ class LogSubscription {
   }
 }
 
-class Logger {
+export class Logger {
   private level: number;
   private readonly subscriptions: Array<LogSubscription>;
   private seed: number;
@@ -87,10 +77,31 @@ class Logger {
 
   public subscribe(): LogSubscription {
     this.seed++;
-    const LogSubscriptionClass: any = LogSubscription;
-    const ret: LogSubscription = new LogSubscriptionClass(this.seed, this);
+    const ret: LogSubscription = new LogSubscription();
+    (ret as any).id = this.seed;
+    (ret as any).logger = this;
     this.subscriptions.push(ret);
     return ret;
+  }
+
+  public debug(msg: string): void {
+    this.log(logMaskDebug, " Debug: ", msg);
+  }
+
+  public info(msg: string): void {
+    this.log(logMaskInfo, " Info: ", msg);
+  }
+
+  public warn(msg: string): void {
+    this.log(logMaskWarn, " Warn: ", msg);
+  }
+
+  public error(msg: string): void {
+    this.log(logMaskError, " Error: ", msg);
+  }
+
+  public fatal(msg: string): void {
+    this.log(logMaskFatal, " Fatal: ", msg);
   }
 
   public log(outputLevel: number, tag: string, msg: string): void {
@@ -99,7 +110,7 @@ class Logger {
     if (Number.isInteger(outputLevel) && (level & outputLevel) > 0) {
       const subscriptions: Array<LogSubscription> = this.subscriptions;
       const isoTimeNow: string = convertToIsoDateString(new Date());
-      const logMsg: string = `${isoTimeNow} ${tag}: ${msg}`;
+      const logMsg: string = `${isoTimeNow}${tag}${msg}\n`;
 
       if (subscriptions.length == 0) {
         console.log(logMsg);
