@@ -68,13 +68,19 @@ class WebSocketNetClient implements IRPCNetClient {
   }
 
   public isConnected(): boolean {
-    console.log("isConnected");
-    return false;
+    if (this.webSocket) {
+      return this.webSocket.readyState === WebSocket.OPEN;
+    } else {
+      return false;
+    }
   }
 
   public isClosed(): boolean {
-    console.log("isClosed");
-    return false;
+    if (this.webSocket) {
+      return this.webSocket.readyState === WebSocket.CLOSED;
+    } else {
+      return false;
+    }
   }
 
   public onOpen?: (netClient: IRPCNetClient) => void;

@@ -8,7 +8,7 @@
     "precompile": "npm run lint",
     "compile": "tsc",
     "precoverage": "npm run compile",
-    "coverage": "jest --env=node --colors --coverage test",
+    "coverage": "jest --env=jsdom --colors --coverage test",
     "postcoverage": "open ./coverage/lcov-report/index.html"
   },
   "repository": {
@@ -28,9 +28,11 @@
   "homepage": "https://github.com/rpccloud-ts/rpcc#readme",
   "devDependencies": {
     "@types/jest": "^24.0.18",
+    "@types/ws": "^6.0.3",
     "jest": "^24.9.0",
     "ts-jest": "^24.0.2",
     "tslint": "^5.19.0",
-    "typescript": "^3.6.2"
+    "typescript": "^3.6.2",
+    "ws": "^7.1.2"
   }
 }
