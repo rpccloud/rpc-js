@@ -27,36 +27,46 @@ class WebSocketNetClient implements IRPCNetClient {
 
   public connect(url: string): boolean {
     if (this.webSocket === undefined) {
-      let me: WebSocketNetClient = this;
       this.reader =  new FileReader();
       this.reader.onload = (event?: ProgressEvent<FileReader>): void => {
-        if (event && event.target && me.onBinary) {
-          me.onBinary(new Uint8Array(event.target.result as ArrayBuffer));
+        if (event && event.target && this.onBinary) {
+          this.onBinary(new Uint8Array(event.target.result as ArrayBuffer));
         }
       };
 
       this.webSocket = new WebSocket(url);
       this.webSocket.onopen = (_: Event): void => {
-        if (me.onOpen) {
-          me.onOpen();
+        if (this.onOpen) {
+          this.onOpen();
         }
       };
       this.webSocket.onmessage = (event?: MessageEvent): void => {
-        if (me.reader && event && event.data instanceof Blob) {
-          me.reader.readAsArrayBuffer(event.data);
+        if (this.reader && event && event.data instanceof Blob) {
+          this.reader.readAsArrayBuffer(event.data);
         }
       };
       this.webSocket.onerror = (event?: Event): void => {
-        if (me.onError && event) {
-          me.onError(event.toString());
+        if (this.onError && event) {
+          this.onError("websocket client error");
         }
       };
       this.webSocket.onclose = (_: CloseEvent): void => {
-        if (me.onClose) {
-          me.onClose();
+        if (this.onClose) {
+          this.onClose();
         }
-        me.webSocket = undefined;
-        me.reader = undefined;
+
+        if (this.webSocket) {
+          this.webSocket.onopen = null;
+          this.webSocket.onmessage = null;
+          this.webSocket.onerror = null;
+          this.webSocket.onclose = null;
+          this.webSocket = undefined;
+        }
+
+        if (this.reader) {
+          this.reader.onload = null;
+          this.reader = undefined;
+        }
       };
       return true;
     } else {
@@ -111,10 +121,18 @@ export class RPCClient {
     this.timeIndex = 0;
     if (url.startsWith("ws") || url.startsWith("wss")) {
       this.netClient = new WebSocketNetClient();
-      this.netClient.onOpen = this.onOpen;
-      this.netClient.onBinary = this.onBinary;
-      this.netClient.onError = this.onError;
-      this.netClient.onClose = this.onClose;
+      this.netClient.onOpen = () => {
+        this.onOpen();
+      };
+      this.netClient.onBinary = (data: Uint8Array) => {
+        this.onBinary(data);
+      };
+      this.netClient.onError = (errMsg: string) => {
+        this.onError(errMsg);
+      };
+      this.netClient.onClose = () => {
+        this.onClose();
+      };
     }
   }
 
@@ -140,28 +158,28 @@ export class RPCClient {
       if (this.netClient) {
         this.netClient.connect(this.url);
       }
-      let me: RPCClient = this;
+
       this.checkTimer = setInterval(() => {
-        if (me.netClient && me.netClient.isConnected()) {
-          me.timeIndex = 0;
-        } else if (me.netClient && me.netClient.isClosed()) {
-          if (me.timeIndex < 60) {
+        if (this.netClient && this.netClient.isConnected()) {
+          this.timeIndex = 0;
+        } else if (this.netClient && this.netClient.isClosed()) {
+          if (this.timeIndex < 60) {
             if (
-              me.timeIndex == 0 ||
-              me.timeIndex == 2 ||
-              me.timeIndex == 5 ||
-              me.timeIndex == 8 ||
-              me.timeIndex == 15 ||
-              me.timeIndex == 30
+              this.timeIndex == 0 ||
+              this.timeIndex == 2 ||
+              this.timeIndex == 5 ||
+              this.timeIndex == 8 ||
+              this.timeIndex == 15 ||
+              this.timeIndex == 30
             ) {
-              me.netClient.connect(me.url);
+              this.netClient.connect(this.url);
             }
           } else {
-            if (me.timeIndex % 30 == 0) {
-              me.netClient.connect(me.url);
+            if (this.timeIndex % 30 == 0) {
+              this.netClient.connect(this.url);
             }
           }
-          me.timeIndex++;
+          this.timeIndex++;
         } else {
           // netClient is connecting or closing, so do nothing
         }

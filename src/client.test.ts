@@ -19,7 +19,7 @@ async function runWebSocketServer(
     };
 
     ws.onerror = (event: WebSocket.ErrorEvent) => {
-      logger.info("onerror " + event.toString());
+      logger.info("onerror " + event.message);
     };
 
     ws.onclose = (_: WebSocket.CloseEvent) => {
