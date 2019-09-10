@@ -20,6 +20,7 @@ async function runWebSocketServer(
     ws.onmessage = (event: WebSocket.MessageEvent) => {
       logger.info("connection onmessage");
       ws.send(event.data);
+      ws.send("string type message to client");
     };
 
     ws.onerror = (event: WebSocket.ErrorEvent) => {
@@ -126,7 +127,7 @@ describe("WebSocketNetClient tests", () => {
         //  onOpen is called
         //  onMessage is called
         //  onClose is called
-        let testData: Uint8Array = new Uint8Array(10000);
+        let testData: Uint8Array = new Uint8Array(50000);
         for (let i: number = 0; i < testData.byteLength; i++) {
           testData[i] = (i % 255) + 1;
         }
@@ -147,12 +148,80 @@ describe("WebSocketNetClient tests", () => {
           .toStrictEqual(true);
         await sleep(30);
         client3.send(testData);
-        await sleep(30);
+        await sleep(50);
         client3.disconnect();
         await sleep(30);
         expect(onOpenCalled).toStrictEqual(true);
         expect(onCloseCalled).toStrictEqual(true);
         expect(onMessageData).toStrictEqual(testData);
+
+        deferred.doResolve(true);
+        return deferred.promise;
+      });
+  });
+
+  test("WebSocketNetClient_disconnect", async () => {
+    await runWebSocketServer(
+      31003,
+      async (_: WebSocket.Server, logger: Logger) => {
+        const deferred: Deferred<any> = new Deferred<any>();
+
+        // ok
+        const client1: WebSocketNetClient = new WebSocketNetClient(logger);
+        expect(client1.isConnected()).toStrictEqual(false);
+        expect(client1.isClosed()).toStrictEqual(true);
+        await sleep(30);
+        expect(client1.connect("ws://127.0.0.1:31003"))
+          .toStrictEqual(true);
+        await sleep(30);
+        expect(client1.isConnected()).toStrictEqual(true);
+        expect(client1.isClosed()).toStrictEqual(false);
+        client1.disconnect();
+        await sleep(30);
+        expect(client1.isConnected()).toStrictEqual(false);
+        expect(client1.isClosed()).toStrictEqual(true);
+
+        // disconnect immediately with onError
+        const client2: WebSocketNetClient = new WebSocketNetClient(logger);
+        let onErrorCalled: boolean = false;
+        client2.onError = () => {
+          onErrorCalled = true;
+        };
+        await sleep(30);
+        expect(client2.connect("ws://127.0.0.1:31003"))
+          .toStrictEqual(true);
+        client2.disconnect();
+        await sleep(30);
+        expect(onErrorCalled).toStrictEqual(true);
+
+        // disconnect immediately without onError
+        const client3: WebSocketNetClient = new WebSocketNetClient(logger);
+        await sleep(30);
+        expect(client3.connect("ws://127.0.0.1:31003"))
+          .toStrictEqual(true);
+        client3.disconnect();
+        await sleep(30);
+
+        // disconnect but webSocket and reader is null
+        const client4: WebSocketNetClient = new WebSocketNetClient(logger);
+        await sleep(30);
+        expect(client4.connect("ws://127.0.0.1:31003"))
+          .toStrictEqual(true);
+        await sleep(30);
+        const ws: WebSocket = (client4 as any).webSocket;
+        (client4 as any).webSocket = undefined;
+        (client4 as any).reader = undefined;
+        ws.close(1000, "");
+        await sleep(30);
+
+        // duplicate disconnect
+        const client5: WebSocketNetClient = new WebSocketNetClient(logger);
+        await sleep(30);
+        expect(client5.connect("ws://127.0.0.1:31003"))
+          .toStrictEqual(true);
+        expect(client5.disconnect()).toStrictEqual(true);
+        expect(client5.disconnect()).toStrictEqual(false);
+        await sleep(30);
 
         deferred.doResolve(true);
         return deferred.promise;
