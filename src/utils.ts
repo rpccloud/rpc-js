@@ -1,3 +1,5 @@
+import {Deferred} from "./deferred";
+
 function pad2(num: number): string {
   let norm: number = Math.floor(Math.abs(num));
   return (norm < 10 ? "0" : "") + norm.toString(10);
@@ -173,4 +175,13 @@ function convertToIsoDateString(date: Date): string {
     "." + pad3(date.getMilliseconds()) +
     dif + pad2(tzo / 60) +
     ":" + pad2(tzo % 60);
+}
+
+export
+async function sleep(timeMS: number): Promise<any> {
+  const deferred: Deferred<any> = new Deferred<any>();
+  setTimeout(() => {
+    deferred.doResolve();
+  }, timeMS);
+  return deferred.promise;
 }

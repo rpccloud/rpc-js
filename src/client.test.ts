@@ -1,45 +1,19 @@
-// import {WebSocket} from "ws"
-//
-// const wss = new WebSocket.Server({ port: 8080 });
-//
-// wss.on('connection', function connection(ws) {
-//   ws.on('message', function incoming(message) {
-//     console.log('received: %s', message);
-//   });
-//
-//   ws.send('something');
-// });
-
-//
-// async function runWebSocketServer(port: number, fn: ()=>void): Promise<any> {
-//
-//   const wss = new WebSocket.Server({ port: 8080 });
-//
-//   wss.on('connection', function connection(ws) {
-//     ws.on('message', function incoming(message) {
-//       console.log('received: %s', message);
-//     });
-//
-//     ws.send('something');
-//   });
-//
-// }
-
 import * as WebSocket from "ws";
 import {Deferred} from "./deferred";
 import {RPCClient} from "./client";
 import {Logger} from "./logger";
+import {sleep} from "./utils";
 
 async function runWebSocketServer(
   port: number,
-  fn: () => Promise<any>,
+  fn: (server: WebSocket.Server) => Promise<any>,
   ): Promise<any> {
   const deferred: Deferred<any> = new Deferred<any>();
 
   const wss: WebSocket.Server = new WebSocket.Server({ port: port });
   const logger: Logger = new Logger();
 
-  wss.on("connection", (ws: WebSocket) => {
+  wss.on("connection", async (ws: WebSocket) => {
     ws.onmessage = (event: WebSocket.MessageEvent) => {
       logger.info("onmessage " + event.toString());
     };
@@ -48,15 +22,16 @@ async function runWebSocketServer(
       logger.info("onerror " + event.toString());
     };
 
-    ws.onclose = (event: WebSocket.CloseEvent) => {
-      logger.info("onclose " + event.toString());
+    ws.onclose = (_: WebSocket.CloseEvent) => {
+      logger.info("onclose ");
     };
 
+    await sleep(1000);
     logger.info("onopen ");
   });
 
   await sleep(200);
-  await fn();
+  await fn(wss);
   await sleep(200);
 
   wss.close((_?: Error) => {
@@ -66,22 +41,19 @@ async function runWebSocketServer(
   return deferred.promise;
 }
 
-async function sleep(timeMS: number): Promise<any> {
-  const deferred: Deferred<any> = new Deferred<any>();
-  setTimeout(() => {
-    deferred.doResolve(true);
-  }, timeMS);
-  return deferred.promise;
-}
-
 describe("client tests", () => {
+  beforeEach(() => {
+    jest.setTimeout(10000);
+  });
+
   test("client_dev", async () => {
     await runWebSocketServer(8888, async () => {
       const deferred: Deferred<any> = new Deferred<any>();
 
       const rpcClient: RPCClient = new RPCClient("ws://127.0.0.1:8888");
       rpcClient.open();
-      await sleep(1000);
+
+      await sleep(3000);
       rpcClient.close();
 
       deferred.doResolve(true);

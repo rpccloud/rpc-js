@@ -3,6 +3,8 @@
 // const CLOSING: number = 2;
 // const CLOSED: number = 3;
 
+import {Logger} from "./logger";
+
 export interface IRPCNetClient {
   send(data: Uint8Array): boolean;
 
@@ -21,6 +23,7 @@ export interface IRPCNetClient {
 class WebSocketNetClient implements IRPCNetClient {
   private webSocket?: WebSocket;
   private reader?: FileReader;
+  private logger: Logger = new Logger();
 
   public send(data: Uint8Array): boolean {
     console.log("send ", data);
@@ -38,31 +41,38 @@ class WebSocketNetClient implements IRPCNetClient {
 
     this.webSocket = new WebSocket(url);
     this.webSocket.onopen = (_: Event): void => {
+      me.logger.info("client onopen");
       if (me.onOpen) {
         me.onOpen(this);
       }
     };
     this.webSocket.onmessage = (event?: MessageEvent): void => {
+      me.logger.info("client onmessage");
       if (me.reader && event && event.data instanceof Blob) {
         me.reader.readAsArrayBuffer(event.data);
       }
     };
     this.webSocket.onerror = (event?: Event): void => {
+      me.logger.info("client onerror");
       if (me.onError && event) {
         me.onError(me, event.toString());
       }
     };
     this.webSocket.onclose = (_: CloseEvent): void => {
+      me.logger.info("client onclose");
       if (me.onClose) {
         me.onClose(me);
       }
     };
+
+    this.logger.info("client connect");
+
     return false;
   }
 
   public disconnect(): boolean {
     if (this.webSocket) {
-      this.webSocket.close();
+      this.webSocket.close(1000, "");
     }
     return false;
   }
@@ -152,5 +162,4 @@ export class RPCClient {
       return false;
     }
   }
-
 }
