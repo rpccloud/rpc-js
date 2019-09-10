@@ -5,12 +5,15 @@ import {
   LogSubscription,
 } from "./logger";
 
-jest.spyOn(console, "log");
-afterEach(() => {
-  jest.clearAllMocks();
-});
-
 describe("logger tests", () => {
+  beforeEach(() => {
+    jest.spyOn(console, "log");
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
   let emptyCB: CallbackFunc = function (_: string): void {
     return;
   };

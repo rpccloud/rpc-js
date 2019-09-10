@@ -1,6 +1,9 @@
 // import {Logger} from "./logger";
 
-export interface IRPCNetClient {
+import {Logger} from "./logger";
+
+export
+interface IRPCNetClient {
   send(data: Uint8Array): boolean;
 
   connect(serverURL: string): boolean;
@@ -15,18 +18,28 @@ export interface IRPCNetClient {
   onClose?: () => void;
 }
 
+export
 class WebSocketNetClient implements IRPCNetClient {
   private webSocket?: WebSocket;
   private reader?: FileReader;
-  // private logger: Logger = new Logger();
+  private readonly logger: Logger;
+
+  public constructor(logger: Logger) {
+    this.logger = logger;
+  }
 
   public send(data: Uint8Array): boolean {
-    console.log("send ", data);
-    return false;
+    if (this.webSocket && this.webSocket.readyState === WebSocket.OPEN) {
+      this.webSocket.send(data);
+      return true;
+    } else {
+      return false;
+    }
   }
 
   public connect(url: string): boolean {
     if (this.webSocket === undefined) {
+      this.logger.info(`connecting to ${url}`);
       this.reader =  new FileReader();
       this.reader.onload = (event?: ProgressEvent<FileReader>): void => {
         if (event && event.target && this.onBinary) {
@@ -96,11 +109,7 @@ class WebSocketNetClient implements IRPCNetClient {
   }
 
   public isClosed(): boolean {
-    if (this.webSocket) {
-      return this.webSocket.readyState === WebSocket.CLOSED;
-    } else {
-      return false;
-    }
+    return !this.webSocket;
   }
 
   public onOpen?: () => void;
@@ -109,18 +118,21 @@ class WebSocketNetClient implements IRPCNetClient {
   public onClose?: () => void;
 }
 
-export class RPCClient {
+export
+class RPCClient {
   private readonly netClient?: IRPCNetClient;
   private readonly url: string;
   private checkTimer: any;
   private timeIndex: number;
+  private readonly logger: Logger;
 
   public constructor(url: string) {
     this.url = url;
     this.checkTimer = null;
     this.timeIndex = 0;
+    this.logger = new Logger();
     if (url.startsWith("ws") || url.startsWith("wss")) {
-      this.netClient = new WebSocketNetClient();
+      this.netClient = new WebSocketNetClient(this.logger);
       this.netClient.onOpen = () => {
         this.onOpen();
       };
@@ -163,19 +175,18 @@ export class RPCClient {
         if (this.netClient && this.netClient.isConnected()) {
           this.timeIndex = 0;
         } else if (this.netClient && this.netClient.isClosed()) {
-          if (this.timeIndex < 60) {
+          if (this.timeIndex < 20) {
             if (
               this.timeIndex == 0 ||
               this.timeIndex == 2 ||
               this.timeIndex == 5 ||
-              this.timeIndex == 8 ||
-              this.timeIndex == 15 ||
-              this.timeIndex == 30
+              this.timeIndex == 9 ||
+              this.timeIndex == 14
             ) {
               this.netClient.connect(this.url);
             }
           } else {
-            if (this.timeIndex % 30 == 0) {
+            if (this.timeIndex % 20 == 0) {
               this.netClient.connect(this.url);
             }
           }
