@@ -1,9 +1,4 @@
-// const CONNECTING: number = 0;
-// const OPEN: number = 1;
-// const CLOSING: number = 2;
-// const CLOSED: number = 3;
-
-import {Logger} from "./logger";
+// import {Logger} from "./logger";
 
 export interface IRPCNetClient {
   send(data: Uint8Array): boolean;
@@ -14,16 +9,16 @@ export interface IRPCNetClient {
   isConnected(): boolean;
   isClosed(): boolean;
 
-  onOpen?: (netClient: IRPCNetClient) => void;
-  onBinary?: (netClient: IRPCNetClient, data: Uint8Array) => boolean;
-  onError?: (netClient: IRPCNetClient, errMsg: string) => void;
-  onClose?: (netClient: IRPCNetClient) => void;
+  onOpen?: () => void;
+  onBinary?: (data: Uint8Array) => void;
+  onError?: (errMsg: string) => void;
+  onClose?: () => void;
 }
 
 class WebSocketNetClient implements IRPCNetClient {
   private webSocket?: WebSocket;
   private reader?: FileReader;
-  private logger: Logger = new Logger();
+  // private logger: Logger = new Logger();
 
   public send(data: Uint8Array): boolean {
     console.log("send ", data);
@@ -31,48 +26,53 @@ class WebSocketNetClient implements IRPCNetClient {
   }
 
   public connect(url: string): boolean {
-    let me: WebSocketNetClient = this;
-    this.reader =  new FileReader();
-    this.reader.onload = (event?: ProgressEvent<FileReader>): void => {
-      if (event && event.target && me.onBinary) {
-        me.onBinary(me, new Uint8Array(event.target.result as ArrayBuffer));
-      }
-    };
+    if (this.webSocket === undefined) {
+      let me: WebSocketNetClient = this;
+      this.reader =  new FileReader();
+      this.reader.onload = (event?: ProgressEvent<FileReader>): void => {
+        if (event && event.target && me.onBinary) {
+          me.onBinary(new Uint8Array(event.target.result as ArrayBuffer));
+        }
+      };
 
-    this.webSocket = new WebSocket(url);
-    this.webSocket.onopen = (_: Event): void => {
-      me.logger.info("client onopen");
-      if (me.onOpen) {
-        me.onOpen(this);
-      }
-    };
-    this.webSocket.onmessage = (event?: MessageEvent): void => {
-      me.logger.info("client onmessage");
-      if (me.reader && event && event.data instanceof Blob) {
-        me.reader.readAsArrayBuffer(event.data);
-      }
-    };
-    this.webSocket.onerror = (event?: Event): void => {
-      me.logger.info("client onerror");
-      if (me.onError && event) {
-        me.onError(me, event.toString());
-      }
-    };
-    this.webSocket.onclose = (_: CloseEvent): void => {
-      me.logger.info("client onclose");
-      if (me.onClose) {
-        me.onClose(me);
-      }
-    };
-
-    this.logger.info("client connect");
-
-    return false;
+      this.webSocket = new WebSocket(url);
+      this.webSocket.onopen = (_: Event): void => {
+        if (me.onOpen) {
+          me.onOpen();
+        }
+      };
+      this.webSocket.onmessage = (event?: MessageEvent): void => {
+        if (me.reader && event && event.data instanceof Blob) {
+          me.reader.readAsArrayBuffer(event.data);
+        }
+      };
+      this.webSocket.onerror = (event?: Event): void => {
+        if (me.onError && event) {
+          me.onError(event.toString());
+        }
+      };
+      this.webSocket.onclose = (_: CloseEvent): void => {
+        if (me.onClose) {
+          me.onClose();
+        }
+        me.webSocket = undefined;
+        me.reader = undefined;
+      };
+      return true;
+    } else {
+      return false;
+    }
   }
 
   public disconnect(): boolean {
     if (this.webSocket) {
-      this.webSocket.close(1000, "");
+      if (
+        this.webSocket.readyState === WebSocket.OPEN ||
+        this.webSocket.readyState === WebSocket.CONNECTING
+      ) {
+        this.webSocket.close(1000, "");
+        return true;
+      }
     }
     return false;
   }
@@ -93,10 +93,10 @@ class WebSocketNetClient implements IRPCNetClient {
     }
   }
 
-  public onOpen?: (netClient: IRPCNetClient) => void;
-  public onBinary?: (netClient: IRPCNetClient, data: Uint8Array) => boolean;
-  public onError?: (netClient: IRPCNetClient, errMsg: string) => void;
-  public onClose?: (netClient: IRPCNetClient) => void;
+  public onOpen?: () => void;
+  public onBinary?: (data: Uint8Array) => void;
+  public onError?: (errMsg: string) => void;
+  public onClose?: () => void;
 }
 
 export class RPCClient {
@@ -111,7 +111,27 @@ export class RPCClient {
     this.timeIndex = 0;
     if (url.startsWith("ws") || url.startsWith("wss")) {
       this.netClient = new WebSocketNetClient();
+      this.netClient.onOpen = this.onOpen;
+      this.netClient.onBinary = this.onBinary;
+      this.netClient.onError = this.onError;
+      this.netClient.onClose = this.onClose;
     }
+  }
+
+  private onOpen(): void {
+    console.log(this.url + " onOpen");
+  }
+
+  private onBinary(data: Uint8Array): void {
+    console.log(this.url + " onBinary", data);
+  }
+
+  private onError(errMsg: string): void {
+    console.log(this.url + " onError", errMsg);
+  }
+
+  private onClose(): void {
+    console.log(this.url + " onClose");
   }
 
   public open(): boolean {

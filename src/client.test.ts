@@ -27,7 +27,7 @@ async function runWebSocketServer(
     };
 
     await sleep(1000);
-    logger.info("onopen ");
+    logger.info("connection onopen ");
   });
 
   await sleep(200);
@@ -52,9 +52,8 @@ describe("client tests", () => {
 
       const rpcClient: RPCClient = new RPCClient("ws://127.0.0.1:8888");
       rpcClient.open();
-
-      await sleep(3000);
       rpcClient.close();
+      await sleep(1000);
 
       deferred.doResolve(true);
       return deferred.promise;
