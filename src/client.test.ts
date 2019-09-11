@@ -249,7 +249,7 @@ describe("RPCClient tests", () => {
     expect((client3 as any).logger).toBeTruthy();
   });
 
-  test("RPCClient_open_schedule_1", async () => {
+  test("RPCClient_checkConnect", async () => {
     const client1: RPCClient = new RPCClient("ws://127.0.0.1:22332");
     (client1 as any).checkTimerInterval = 100;
     client1.open();
@@ -279,5 +279,22 @@ describe("RPCClient tests", () => {
     expect(delta5 > 1900 && delta5 < 2100).toStrictEqual(true);
   });
 
+  test("RPCClient_open_close", async () => {
+    await runWebSocketServer(
+      31004,
+      async (_: WebSocket.Server) => {
+        // checkConnect twice
+        const client1: RPCClient = new RPCClient("ws://127.0.0.1:31004");
+        (client1 as any).checkTimerInterval = 100;
+        (client1 as any).checkConnect();
+        (client1 as any).checkConnect();
 
+        expect(client1.open()).toStrictEqual(true);
+        expect(client1.open()).toStrictEqual(false);
+        await sleep(1000);
+        expect(client1.close()).toStrictEqual(true);
+        expect(client1.close()).toStrictEqual(false);
+      },
+    );
+  });
 });
