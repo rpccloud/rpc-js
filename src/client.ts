@@ -200,6 +200,7 @@ class RPCClient {
 
   public open(url: string): boolean {
     if (this.checkTimer === null) {
+      // create netClient
       if (url.startsWith("ws") || url.startsWith("wss")) {
         this.url = url;
         this.netClient = new WebSocketNetClient(this.logger);
@@ -211,9 +212,9 @@ class RPCClient {
         this.netClient = undefined;
       }
 
+      // start check timer
       this.tryConnectCount = 0;
       this.checkConnect();
-
       this.checkTimer = setInterval(
         this.checkConnect.bind(this),
         this.checkTimerInterval,
@@ -250,18 +251,23 @@ class RPCClient {
   }
 
   public async close(): Promise<boolean> {
-    if (this.netClient && this.checkTimer !== null) {
+    if (this.checkTimer !== null) {
+      // clear check timer
       clearTimeout(this.checkTimer);
       this.checkTimer = null;
-      this.netClient.disconnect();
-      while (!this.netClient.isClosed()) {
-        await sleep(10);
+
+      // clear netClient
+      if (this.netClient) {
+        this.netClient.disconnect();
+        while (!this.netClient.isClosed()) {
+          await sleep(10);
+        }
+        this.netClient.onOpen = undefined;
+        this.netClient.onBinary = undefined;
+        this.netClient.onError = undefined;
+        this.netClient.onClose = undefined;
+        this.netClient = undefined;
       }
-      this.netClient.onOpen = undefined;
-      this.netClient.onBinary = undefined;
-      this.netClient.onError = undefined;
-      this.netClient.onClose = undefined;
-      this.netClient = undefined;
       return returnAsync(true);
     } else {
       return returnAsync(false);
