@@ -1,6 +1,6 @@
 import * as WebSocket from "ws";
 import {Deferred} from "./deferred";
-import {WebSocketNetClient} from "./client";
+import {RPCClient, WebSocketNetClient} from "./client";
 import {Logger} from "./logger";
 import {sleep} from "./utils";
 
@@ -44,13 +44,11 @@ async function runWebSocketServer(
 
 describe("WebSocketNetClient tests", () => {
   beforeEach(() => {
-    jest.setTimeout(200000);
     jest.spyOn(console, "log");
   });
 
   afterEach(() => {
     jest.clearAllMocks();
-    jest.setTimeout(5000);
   });
 
   test("WebSocketNetClient_new", async () => {
@@ -220,3 +218,73 @@ describe("WebSocketNetClient tests", () => {
       });
   });
 });
+
+describe("RPCClient tests", () => {
+  beforeEach(() => {
+    jest.setTimeout(200000);
+    jest.spyOn(console, "log");
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
+    jest.setTimeout(5000);
+  });
+
+  test("RPCClient_new", async () => {
+    const client1: RPCClient = new RPCClient("ws://127.0.0.1:22332");
+    expect((client1 as any).netClient).toBeTruthy();
+    expect((client1 as any).netClient instanceof WebSocketNetClient)
+      .toBe(true);
+    expect((client1 as any).url).toStrictEqual("ws://127.0.0.1:22332");
+    expect((client1 as any).checkTimer === null).toBe(true);
+    expect((client1 as any).checkTimerInterval).toStrictEqual(1000);
+    expect((client1 as any).tryConnectCount).toStrictEqual(0);
+    expect((client1 as any).cbSeed).toStrictEqual(1);
+    expect((client1 as any).logger).toBeTruthy();
+
+    const client2: RPCClient = new RPCClient("wss://127.0.0.1:22332");
+    expect((client2 as any).netClient).toBeTruthy();
+    expect((client2 as any).netClient instanceof WebSocketNetClient)
+      .toBe(true);
+    expect((client2 as any).url).toStrictEqual("wss://127.0.0.1:22332");
+    expect((client2 as any).checkTimer === null).toBe(true);
+    expect((client2 as any).checkTimerInterval).toStrictEqual(1000);
+    expect((client2 as any).tryConnectCount).toStrictEqual(0);
+    expect((client2 as any).cbSeed).toStrictEqual(1);
+    expect((client2 as any).logger).toBeTruthy();
+
+    const client3: RPCClient = new RPCClient("unknown://127.0.0.1:22332");
+    expect((client3 as any).netClient === undefined).toBe(true);
+    expect((client3 as any).url)
+      .toStrictEqual("unknown://127.0.0.1:22332");
+    expect((client3 as any).checkTimer === null).toBe(true);
+    expect((client3 as any).checkTimerInterval).toStrictEqual(1000);
+    expect((client3 as any).tryConnectCount).toStrictEqual(0);
+    expect((client3 as any).cbSeed).toStrictEqual(1);
+    expect((client3 as any).logger).toBeTruthy();
+  });
+
+});
+
+//
+// public constructor(url: string) {
+//   this.url = url;
+//   this.checkTimer = null;
+//   this.timeIndex = 0;
+//   this.logger = new Logger();
+//   Eif (url.startsWith("ws") || url.startsWith("wss")) {
+//     this.netClient = new WebSocketNetClient(this.logger);
+//     this.netClient.onOpen = () => {
+//       this.onOpen();
+//     };
+//     this.netClient.onBinary = (data: Uint8Array) => {
+//       this.onBinary(data);
+//     };
+//     this.netClient.onError = (errMsg: string) => {
+//       this.onError(errMsg);
+//     };
+//     this.netClient.onClose = () => {
+//       this.onClose();
+//     };
+//   }
+// }

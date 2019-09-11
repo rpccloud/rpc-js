@@ -1,6 +1,7 @@
 // import {Logger} from "./logger";
 
 import {Logger} from "./logger";
+import {Deferred} from "./deferred";
 
 export
 interface IRPCNetClient {
@@ -123,28 +124,23 @@ class RPCClient {
   private readonly netClient?: IRPCNetClient;
   private readonly url: string;
   private checkTimer: any;
-  private timeIndex: number;
+  private readonly checkTimerInterval: number = 1000;
+  private tryConnectCount: number;
+  private cbSeed: number;
   private readonly logger: Logger;
 
   public constructor(url: string) {
     this.url = url;
     this.checkTimer = null;
-    this.timeIndex = 0;
+    this.tryConnectCount = 0;
+    this.cbSeed = 1;
     this.logger = new Logger();
     if (url.startsWith("ws") || url.startsWith("wss")) {
       this.netClient = new WebSocketNetClient(this.logger);
-      this.netClient.onOpen = () => {
-        this.onOpen();
-      };
-      this.netClient.onBinary = (data: Uint8Array) => {
-        this.onBinary(data);
-      };
-      this.netClient.onError = (errMsg: string) => {
-        this.onError(errMsg);
-      };
-      this.netClient.onClose = () => {
-        this.onClose();
-      };
+      this.netClient.onOpen = this.onOpen.bind(this);
+      this.netClient.onBinary = this.onBinary.bind(this);
+      this.netClient.onError = this.onError.bind(this);
+      this.netClient.onClose = this.onClose.bind(this);
     }
   }
 
@@ -164,37 +160,44 @@ class RPCClient {
     console.log(this.url + " onClose");
   }
 
+  public async send(): Promise<any> {
+    const deferred: Deferred<any> = new Deferred<any>();
+    deferred.doResolve(this.cbSeed);
+    return deferred.promise;
+  }
+
   public open(): boolean {
     if (this.checkTimer === null) {
-      this.timeIndex = 0;
+      this.tryConnectCount = 0;
+
       if (this.netClient) {
         this.netClient.connect(this.url);
       }
 
       this.checkTimer = setInterval(() => {
         if (this.netClient && this.netClient.isConnected()) {
-          this.timeIndex = 0;
+          this.tryConnectCount = 0;
         } else if (this.netClient && this.netClient.isClosed()) {
-          if (this.timeIndex < 20) {
+          if (this.tryConnectCount < 20) {
             if (
-              this.timeIndex == 0 ||
-              this.timeIndex == 2 ||
-              this.timeIndex == 5 ||
-              this.timeIndex == 9 ||
-              this.timeIndex == 14
+              this.tryConnectCount == 0 ||
+              this.tryConnectCount == 2 ||
+              this.tryConnectCount == 5 ||
+              this.tryConnectCount == 9 ||
+              this.tryConnectCount == 14
             ) {
               this.netClient.connect(this.url);
             }
           } else {
-            if (this.timeIndex % 20 == 0) {
+            if (this.tryConnectCount % 20 == 0) {
               this.netClient.connect(this.url);
             }
           }
-          this.timeIndex++;
+          this.tryConnectCount++;
         } else {
           // netClient is connecting or closing, so do nothing
         }
-      }, 1000);
+      }, this.checkTimerInterval);
       return true;
     } else {
       return false;
