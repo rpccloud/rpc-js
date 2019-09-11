@@ -185,3 +185,12 @@ async function sleep(timeMS: number): Promise<any> {
   }, timeMS);
   return deferred.promise;
 }
+
+export
+async function returnAsync<T>(value: T): Promise<T> {
+  return new Promise ((
+    resolve: (value?: T | PromiseLike<T>) => void,
+  ) => {
+    resolve(value);
+  });
+}

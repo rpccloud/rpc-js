@@ -219,43 +219,21 @@ describe("RPCClient tests", () => {
   });
 
   test("RPCClient_new", async () => {
-    const client1: RPCClient = new RPCClient("ws://127.0.0.1:22332");
-    expect((client1 as any).netClient).toBeTruthy();
-    expect((client1 as any).netClient instanceof WebSocketNetClient)
-      .toBe(true);
-    expect((client1 as any).url).toStrictEqual("ws://127.0.0.1:22332");
+    const client1: RPCClient = new RPCClient();
+    expect((client1 as any).netClient === undefined).toBe(true);
+    expect((client1 as any).url).toStrictEqual("");
     expect((client1 as any).checkTimer === null).toBe(true);
     expect((client1 as any).checkTimerInterval).toStrictEqual(1000);
     expect((client1 as any).tryConnectCount).toStrictEqual(0);
-    expect((client1 as any).cbSeed).toStrictEqual(1);
+    expect((client1 as any).cbSeed).toStrictEqual(0);
     expect((client1 as any).logger).toBeTruthy();
-
-    const client2: RPCClient = new RPCClient("wss://127.0.0.1:22332");
-    expect((client2 as any).netClient).toBeTruthy();
-    expect((client2 as any).netClient instanceof WebSocketNetClient)
-      .toBe(true);
-    expect((client2 as any).url).toStrictEqual("wss://127.0.0.1:22332");
-    expect((client2 as any).checkTimer === null).toBe(true);
-    expect((client2 as any).checkTimerInterval).toStrictEqual(1000);
-    expect((client2 as any).tryConnectCount).toStrictEqual(0);
-    expect((client2 as any).cbSeed).toStrictEqual(1);
-    expect((client2 as any).logger).toBeTruthy();
-
-    const client3: RPCClient = new RPCClient("unknown://127.0.0.1:22332");
-    expect((client3 as any).netClient === undefined).toBe(true);
-    expect((client3 as any).url)
-      .toStrictEqual("unknown://127.0.0.1:22332");
-    expect((client3 as any).checkTimer === null).toBe(true);
-    expect((client3 as any).checkTimerInterval).toStrictEqual(1000);
-    expect((client3 as any).tryConnectCount).toStrictEqual(0);
-    expect((client3 as any).cbSeed).toStrictEqual(1);
-    expect((client3 as any).logger).toBeTruthy();
+    expect((client1 as any).pools).toBeTruthy();
   });
 
   test("RPCClient_checkConnect", async () => {
-    const client1: RPCClient = new RPCClient("ws://127.0.0.1:22332");
+    const client1: RPCClient = new RPCClient();
     (client1 as any).checkTimerInterval = 100;
-    client1.open();
+    client1.open("ws://127.0.0.1:22332");
     await sleep(5000);
 
     const callTimes: Array<Date> = [];
@@ -287,16 +265,18 @@ describe("RPCClient tests", () => {
       31004,
       async (_: WebSocket.Server) => {
         // checkConnect twice
-        const client1: RPCClient = new RPCClient("ws://127.0.0.1:31004");
+        const client1: RPCClient = new RPCClient();
         (client1 as any).checkTimerInterval = 100;
         (client1 as any).checkConnect();
         (client1 as any).checkConnect();
 
-        expect(client1.open()).toStrictEqual(true);
-        expect(client1.open()).toStrictEqual(false);
+        expect(client1.open("ws://127.0.0.1:31004"))
+          .toStrictEqual(true);
+        expect(client1.open("ws://127.0.0.1:31004"))
+          .toStrictEqual(false);
         await sleep(1000);
-        expect(client1.close()).toStrictEqual(true);
-        expect(client1.close()).toStrictEqual(false);
+        expect(await client1.close()).toStrictEqual(true);
+        expect(await client1.close()).toStrictEqual(false);
       },
     );
   });

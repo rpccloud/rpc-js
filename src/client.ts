@@ -3,6 +3,8 @@
 import {Logger} from "./logger";
 import {Deferred} from "./deferred";
 import {RPCError, RPCInt64, RPCValue} from "./types";
+import {RPCStream} from "./stream";
+import {returnAsync, sleep} from "./utils";
 
 type RPCCallBackType = [RPCValue, RPCError | null];
 
@@ -122,33 +124,51 @@ class WebSocketNetClient implements IRPCNetClient {
   public onClose?: () => void;
 }
 
+class ClientCallbackItem {
+  public readonly id: number;
+  public readonly sendDeadlineMS: number;
+  public readonly receiveDeadlineMS: number;
+  public readonly deferred: Deferred<RPCCallBackType>;
+  public readonly stream: RPCStream;
+  public readonly isSend: boolean;
+
+  public constructor(
+    id: number,
+    sendDeadlineMS: number,
+    receiveDeadlineMS: number,
+    deferred: Deferred<RPCCallBackType>,
+  ) {
+    this.id = id;
+    this.sendDeadlineMS = sendDeadlineMS;
+    this.receiveDeadlineMS = receiveDeadlineMS;
+    this.deferred = deferred;
+    this.stream = new RPCStream();
+    this.isSend = false;
+  }
+}
+
 export
 class RPCClient {
-  private readonly netClient?: IRPCNetClient;
-  private readonly url: string;
+  private netClient?: IRPCNetClient;
+  private url: string;
   private checkTimer: any;
   private readonly checkTimerInterval: number = 1000;
   private tryConnectCount: number;
   private cbSeed: number;
   private readonly logger: Logger;
+  private readonly pools: Array<ClientCallbackItem>;
 
-  public constructor(url: string) {
-    this.url = url;
+  public constructor() {
+    this.url = "";
     this.checkTimer = null;
     this.tryConnectCount = 0;
-    this.cbSeed = 1;
+    this.cbSeed = 0;
     this.logger = new Logger();
-    if (url.startsWith("ws") || url.startsWith("wss")) {
-      this.netClient = new WebSocketNetClient(this.logger);
-      this.netClient.onOpen = this.onOpen.bind(this);
-      this.netClient.onBinary = this.onBinary.bind(this);
-      this.netClient.onError = this.onError.bind(this);
-      this.netClient.onClose = this.onClose.bind(this);
-    }
+    this.pools = new Array<ClientCallbackItem>();
   }
 
-  private onOpen(): void {
-    console.log(this.url + " onOpen");
+  private onConnect(): void {
+    console.log(this.url + " onOpen", this.pools);
   }
 
   private onBinary(data: Uint8Array): void {
@@ -159,12 +179,12 @@ class RPCClient {
     console.log(this.url + " onError", errMsg);
   }
 
-  private onClose(): void {
+  private onDisconnect(): void {
     console.log(this.url + " onClose");
   }
 
   public async send(): Promise<RPCCallBackType> {
-    const deferred: Deferred<RPCCallBackType> = new Deferred<any>();
+    const deferred: Deferred<RPCCallBackType> = new Deferred<RPCCallBackType>();
     // check rpc client is not open
     if (!this.checkTimer) {
       deferred.doResolve([null, new RPCError(
@@ -178,8 +198,19 @@ class RPCClient {
     return deferred.promise;
   }
 
-  public open(): boolean {
+  public open(url: string): boolean {
     if (this.checkTimer === null) {
+      if (url.startsWith("ws") || url.startsWith("wss")) {
+        this.url = url;
+        this.netClient = new WebSocketNetClient(this.logger);
+        this.netClient.onOpen = this.onConnect.bind(this);
+        this.netClient.onBinary = this.onBinary.bind(this);
+        this.netClient.onError = this.onError.bind(this);
+        this.netClient.onClose = this.onDisconnect.bind(this);
+      } else {
+        this.netClient = undefined;
+      }
+
       this.tryConnectCount = 0;
       this.checkConnect();
 
@@ -218,14 +249,22 @@ class RPCClient {
     }
   }
 
-  public close(): boolean {
+  public async close(): Promise<boolean> {
     if (this.netClient && this.checkTimer !== null) {
       clearTimeout(this.checkTimer);
       this.checkTimer = null;
       this.netClient.disconnect();
-      return true;
+      while (!this.netClient.isClosed()) {
+        await sleep(10);
+      }
+      this.netClient.onOpen = undefined;
+      this.netClient.onBinary = undefined;
+      this.netClient.onError = undefined;
+      this.netClient.onClose = undefined;
+      this.netClient = undefined;
+      return returnAsync(true);
     } else {
-      return false;
+      return returnAsync(false);
     }
   }
 }

@@ -1,4 +1,5 @@
-export class Deferred<T> {
+export
+class Deferred<T> {
   public readonly promise: Promise<T>;
   private resolve?: (value?: T | PromiseLike<T>) => void;
   private reject?: (reason?: any) => void;
