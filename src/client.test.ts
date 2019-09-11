@@ -88,7 +88,8 @@ describe("WebSocketNetClient tests", () => {
           .toStrictEqual(false);
         await sleep(100);
         client1.disconnect();
-      });
+      },
+    );
   });
 
   test("WebSocketNetClient_connect", async () => {
@@ -143,7 +144,8 @@ describe("WebSocketNetClient tests", () => {
         expect(onOpenCalled).toStrictEqual(true);
         expect(onCloseCalled).toStrictEqual(true);
         expect(onMessageData).toStrictEqual(testData);
-      });
+      },
+    );
   });
 
   test("WebSocketNetClient_disconnect", async () => {
@@ -200,7 +202,8 @@ describe("WebSocketNetClient tests", () => {
         expect(client5.disconnect()).toStrictEqual(true);
         expect(client5.disconnect()).toStrictEqual(false);
         await sleep(30);
-      });
+      },
+    );
   });
 });
 
