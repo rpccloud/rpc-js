@@ -169,38 +169,40 @@ class RPCClient {
   public open(): boolean {
     if (this.checkTimer === null) {
       this.tryConnectCount = 0;
+      this.checkConnect();
 
-      if (this.netClient) {
-        this.netClient.connect(this.url);
-      }
-
-      this.checkTimer = setInterval(() => {
-        if (this.netClient && this.netClient.isConnected()) {
-          this.tryConnectCount = 0;
-        } else if (this.netClient && this.netClient.isClosed()) {
-          if (this.tryConnectCount < 20) {
-            if (
-              this.tryConnectCount == 0 ||
-              this.tryConnectCount == 2 ||
-              this.tryConnectCount == 5 ||
-              this.tryConnectCount == 9 ||
-              this.tryConnectCount == 14
-            ) {
-              this.netClient.connect(this.url);
-            }
-          } else {
-            if (this.tryConnectCount % 20 == 0) {
-              this.netClient.connect(this.url);
-            }
-          }
-          this.tryConnectCount++;
-        } else {
-          // netClient is connecting or closing, so do nothing
-        }
-      }, this.checkTimerInterval);
+      this.checkTimer = setInterval(
+        this.checkConnect.bind(this),
+        this.checkTimerInterval,
+      );
       return true;
     } else {
       return false;
+    }
+  }
+
+  private checkConnect(): void {
+    if (this.netClient && this.netClient.isConnected()) {
+      this.tryConnectCount = 0;
+    } else if (this.netClient && this.netClient.isClosed()) {
+      if (this.tryConnectCount < 20) {
+        if (
+          this.tryConnectCount == 0 ||
+          this.tryConnectCount == 2 ||
+          this.tryConnectCount == 5 ||
+          this.tryConnectCount == 9 ||
+          this.tryConnectCount == 14
+        ) {
+          this.netClient.connect(this.url);
+        }
+      } else {
+        if (this.tryConnectCount % 20 == 0) {
+          this.netClient.connect(this.url);
+        }
+      }
+      this.tryConnectCount++;
+    } else {
+      // netClient is connecting or closing, so do nothing
     }
   }
 

@@ -62,8 +62,6 @@ describe("WebSocketNetClient tests", () => {
     await runWebSocketServer(
       31001,
       async (_: WebSocket.Server, logger: Logger) => {
-        const deferred: Deferred<any> = new Deferred<any>();
-
         // ok
         const client1: WebSocketNetClient = new WebSocketNetClient(logger);
         client1.connect("ws://127.0.0.1:31001");
@@ -90,9 +88,6 @@ describe("WebSocketNetClient tests", () => {
           .toStrictEqual(false);
         await sleep(80);
         client1.disconnect();
-
-        deferred.doResolve(true);
-        return deferred.promise;
       });
   });
 
@@ -100,8 +95,6 @@ describe("WebSocketNetClient tests", () => {
     await runWebSocketServer(
       31002,
       async (_: WebSocket.Server, logger: Logger) => {
-        const deferred: Deferred<any> = new Deferred<any>();
-
         // ok
         const client1: WebSocketNetClient = new WebSocketNetClient(logger);
         await sleep(80);
@@ -150,9 +143,6 @@ describe("WebSocketNetClient tests", () => {
         expect(onOpenCalled).toStrictEqual(true);
         expect(onCloseCalled).toStrictEqual(true);
         expect(onMessageData).toStrictEqual(testData);
-
-        deferred.doResolve(true);
-        return deferred.promise;
       });
   });
 
@@ -160,8 +150,6 @@ describe("WebSocketNetClient tests", () => {
     await runWebSocketServer(
       31003,
       async (_: WebSocket.Server, logger: Logger) => {
-        const deferred: Deferred<any> = new Deferred<any>();
-
         // ok
         const client1: WebSocketNetClient = new WebSocketNetClient(logger);
         expect(client1.isConnected()).toStrictEqual(false);
@@ -212,9 +200,6 @@ describe("WebSocketNetClient tests", () => {
         expect(client5.disconnect()).toStrictEqual(true);
         expect(client5.disconnect()).toStrictEqual(false);
         await sleep(30);
-
-        deferred.doResolve(true);
-        return deferred.promise;
       });
   });
 });
@@ -264,27 +249,35 @@ describe("RPCClient tests", () => {
     expect((client3 as any).logger).toBeTruthy();
   });
 
-});
+  test("RPCClient_open_schedule_1", async () => {
+    const client1: RPCClient = new RPCClient("ws://127.0.0.1:22332");
+    (client1 as any).checkTimerInterval = 100;
+    client1.open();
+    await sleep(5000);
 
-//
-// public constructor(url: string) {
-//   this.url = url;
-//   this.checkTimer = null;
-//   this.timeIndex = 0;
-//   this.logger = new Logger();
-//   Eif (url.startsWith("ws") || url.startsWith("wss")) {
-//     this.netClient = new WebSocketNetClient(this.logger);
-//     this.netClient.onOpen = () => {
-//       this.onOpen();
-//     };
-//     this.netClient.onBinary = (data: Uint8Array) => {
-//       this.onBinary(data);
-//     };
-//     this.netClient.onError = (errMsg: string) => {
-//       this.onError(errMsg);
-//     };
-//     this.netClient.onClose = () => {
-//       this.onClose();
-//     };
-//   }
-// }
+    const callTimes: Array<Date> = [];
+    const logLength: number = (console.log as any).mock.calls.length;
+    for (let i: number = 0; i < logLength; i++) {
+      const log: string = (console.log as any).mock.calls[i][0];
+      if (log.includes("connecting")) {
+        callTimes.push(new Date(log.split(" ")[0]));
+      }
+    }
+
+    expect(callTimes.length).toStrictEqual(7);
+    const delta0: number = callTimes[1].getTime() - callTimes[0].getTime();
+    const delta1: number = callTimes[2].getTime() - callTimes[1].getTime();
+    const delta2: number = callTimes[3].getTime() - callTimes[2].getTime();
+    const delta3: number = callTimes[4].getTime() - callTimes[3].getTime();
+    const delta4: number = callTimes[5].getTime() - callTimes[4].getTime();
+    const delta5: number = callTimes[6].getTime() - callTimes[5].getTime();
+    expect(delta0 > 150 && delta0 < 250).toStrictEqual(true);
+    expect(delta1 > 250 && delta1 < 350).toStrictEqual(true);
+    expect(delta2 > 350 && delta2 < 450).toStrictEqual(true);
+    expect(delta3 > 450 && delta3 < 550).toStrictEqual(true);
+    expect(delta4 > 550 && delta4 < 650).toStrictEqual(true);
+    expect(delta5 > 1900 && delta5 < 2100).toStrictEqual(true);
+  });
+
+
+});
