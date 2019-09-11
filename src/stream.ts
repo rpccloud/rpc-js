@@ -1,5 +1,5 @@
 import {Ieee754} from "./ieee754";
-import {RPCFloat64, RPCInt64, RPCUint64} from "./types";
+import {RPCFloat64, RPCInt64, RPCUint64, RPCValue} from "./types";
 import {stringToUTF8, utf8ToString} from "./utils";
 
 export class RPCStream {
@@ -702,7 +702,7 @@ export class RPCStream {
     return [new Uint8Array([]), false];
   }
 
-  public readArray(): [Array<any>, boolean] {
+  public readArray(): [Array<RPCValue>, boolean] {
     const ch: number = this.peekByte();
 
     if (ch >= 64 && ch < 96) {
@@ -712,7 +712,7 @@ export class RPCStream {
 
       if (ch === 64) {
         this.readPos++;
-        return [new Array<any>(), true];
+        return [new Array<RPCValue>(), true];
       } else if (ch < 95) {
         arrLen = ch - 64;
         const lenBytes: Uint8Array = this.readNBytes(5);
@@ -740,7 +740,7 @@ export class RPCStream {
       }
 
       if (arrLen > 0 && totalLen > 4) {
-        const ret: Array<any> = new Array<any>();
+        const ret: Array<RPCValue> = new Array<RPCValue>();
 
         for (let i: number = 0; i < arrLen; i++) {
           let [v, ok] = this.read();
@@ -760,7 +760,7 @@ export class RPCStream {
     return [[], false];
   }
 
-  public readMap(): [Map<string, any>, boolean] {
+  public readMap(): [Map<string, RPCValue>, boolean] {
     const ch: number = this.peekByte();
     if (ch >= 96 && ch < 128) {
       let mapLen: number = 0;
@@ -769,7 +769,7 @@ export class RPCStream {
 
       if (ch == 96) {
         this.readPos++;
-        return [new Map<string, any>(), true];
+        return [new Map<string, RPCValue>(), true];
       } else if (ch < 127) {
         mapLen = ch - 96;
         const lenBytes: Uint8Array = this.readNBytes(5);
@@ -797,20 +797,20 @@ export class RPCStream {
       }
 
       if (mapLen > 0 && totalLen > 4) {
-        const ret: Map<string, any> = new Map<string, any>();
+        const ret: Map<string, RPCValue> = new Map<string, RPCValue>();
 
         for (let i: number = 0; i < mapLen; i++) {
           let [name, ok] = this.readString();
           if (!ok) {
             this.setReadPos(readStart);
-            return [new Map<string, any>(), false];
+            return [new Map<string, RPCValue>(), false];
           }
           let [value, vok] = this.read();
           if (vok) {
             ret.set(name, value);
           } else {
             this.setReadPos(readStart);
-            return [new Map<string, any>(), false];
+            return [new Map<string, RPCValue>(), false];
           }
         }
         if (this.getReadPos() == readStart + totalLen) {
@@ -820,10 +820,10 @@ export class RPCStream {
       this.setReadPos(readStart);
     }
 
-    return [new Map<string, any>(), false];
+    return [new Map<string, RPCValue>(), false];
   }
 
-  public read(): [any, boolean] {
+  public read(): [RPCValue, boolean] {
     const op: number = this.peekByte();
 
     switch (op) {

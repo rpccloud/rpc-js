@@ -2,6 +2,9 @@
 
 import {Logger} from "./logger";
 import {Deferred} from "./deferred";
+import {RPCError, RPCInt64, RPCValue} from "./types";
+
+type RPCCallBackType = [RPCValue, RPCError | null];
 
 export
 interface IRPCNetClient {
@@ -160,9 +163,18 @@ class RPCClient {
     console.log(this.url + " onClose");
   }
 
-  public async send(): Promise<any> {
-    const deferred: Deferred<any> = new Deferred<any>();
-    deferred.doResolve(this.cbSeed);
+  public async send(): Promise<RPCCallBackType> {
+    const deferred: Deferred<RPCCallBackType> = new Deferred<any>();
+    // check rpc client is not open
+    if (!this.checkTimer) {
+      deferred.doResolve([null, new RPCError(
+        "rpc-client: closed",
+        "",
+      )]);
+      return deferred.promise;
+    }
+
+    deferred.doResolve([new RPCInt64(this.cbSeed), null]);
     return deferred.promise;
   }
 
