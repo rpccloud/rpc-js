@@ -36,6 +36,14 @@ export class RPCStream {
     }
   }
 
+  public writeUint8Array(value: Uint8Array): void {
+    this.enlarge(this.writePos + value.byteLength);
+    for (let n of value) {
+      this.data[this.writePos] = n;
+      this.writePos++;
+    }
+  }
+
   private peekByte(): number {
     if (this.readPos < this.writePos) {
       return this.data[this.readPos];
@@ -112,6 +120,20 @@ export class RPCStream {
     const originWritePos: number = this.writePos;
 
     this.writePos = 1;
+    this.putByte(id);
+    id >>>= 8;
+    this.putByte(id);
+    id >>>= 8;
+    this.putByte(id);
+    this.putByte(id >>> 8);
+
+    this.writePos = originWritePos;
+  }
+
+  public setClientConnInfo(id: number): void {
+    const originWritePos: number = this.writePos;
+
+    this.writePos = 5;
     this.putByte(id);
     id >>>= 8;
     this.putByte(id);

@@ -3,6 +3,7 @@ import {Deferred} from "./deferred";
 import {RPCClient, WebSocketNetClient} from "./client";
 import {Logger} from "./logger";
 import {sleep} from "./utils";
+import {RPCStream} from "./stream";
 
 async function runWebSocketServer(
   port: number,
@@ -131,8 +132,8 @@ describe("WebSocketNetClient tests", () => {
         client3.onClose = () => {
           onCloseCalled = true;
         };
-        client3.onBinary = (data: Uint8Array) => {
-          onMessageData = data;
+        client3.onStream = (stream: RPCStream) => {
+          onMessageData = stream.getBuffer();
         };
         expect(client3.connect("ws://127.0.0.1:31002"))
           .toStrictEqual(true);
@@ -225,7 +226,7 @@ describe("RPCClient tests", () => {
     expect((client1 as any).checkTimer === null).toBe(true);
     expect((client1 as any).checkTimerInterval).toStrictEqual(1000);
     expect((client1 as any).tryConnectCount).toStrictEqual(0);
-    expect((client1 as any).cbSeed).toStrictEqual(0);
+    expect((client1 as any).cbSeed).toStrictEqual(1);
     expect((client1 as any).logger).toBeTruthy();
     expect((client1 as any).pools).toBeTruthy();
   });
@@ -233,8 +234,9 @@ describe("RPCClient tests", () => {
   test("RPCClient_checkConnect", async () => {
     const client1: RPCClient = new RPCClient();
     (client1 as any).checkTimerInterval = 100;
+    (client1 as any).pools.push(true);  // to open fast conn mode
     client1.open("ws://127.0.0.1:22332");
-    await sleep(5000);
+    await sleep(2300);
 
     const callTimes: Array<Date> = [];
     const logLength: number = (console.log as any).mock.calls.length;
@@ -245,19 +247,15 @@ describe("RPCClient tests", () => {
       }
     }
 
-    expect(callTimes.length).toStrictEqual(7);
+    expect(callTimes.length).toStrictEqual(5);
     const delta0: number = callTimes[1].getTime() - callTimes[0].getTime();
     const delta1: number = callTimes[2].getTime() - callTimes[1].getTime();
     const delta2: number = callTimes[3].getTime() - callTimes[2].getTime();
     const delta3: number = callTimes[4].getTime() - callTimes[3].getTime();
-    const delta4: number = callTimes[5].getTime() - callTimes[4].getTime();
-    const delta5: number = callTimes[6].getTime() - callTimes[5].getTime();
     expect(delta0 > 150 && delta0 < 250).toStrictEqual(true);
     expect(delta1 > 250 && delta1 < 350).toStrictEqual(true);
-    expect(delta2 > 350 && delta2 < 450).toStrictEqual(true);
+    expect(delta2 > 450 && delta2 < 550).toStrictEqual(true);
     expect(delta3 > 450 && delta3 < 550).toStrictEqual(true);
-    expect(delta4 > 550 && delta4 < 650).toStrictEqual(true);
-    expect(delta5 > 1900 && delta5 < 2100).toStrictEqual(true);
   });
 
   test("RPCClient_open_close", async () => {
@@ -279,5 +277,31 @@ describe("RPCClient tests", () => {
         expect(await client1.close()).toStrictEqual(false);
       },
     );
+  });
+
+  test("RPCClient_dev", async () => {
+    let success: number = 0;
+    const client1: RPCClient = new RPCClient();
+    client1.open("ws://127.0.0.1:12345/ws");
+
+    for (let i: number = 0; i < 5000; i++) {
+      setTimeout(async () => {
+        let [value, err] = await client1.send(
+          "$.user:sayHello",
+          i.toString(),
+        );
+
+        if (err == null) {
+          success++;
+        } else {
+          console.log(value);
+        }
+      }, 1000);
+    }
+
+    await sleep(10000);
+
+    console.log(success);
+    await client1.close();
   });
 });

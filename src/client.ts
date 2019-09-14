@@ -2,7 +2,7 @@
 
 import {Logger} from "./logger";
 import {Deferred} from "./deferred";
-import {RPCError, RPCInt64, RPCValue} from "./types";
+import {RPCError, RPCUint64, RPCValue} from "./types";
 import {RPCStream} from "./stream";
 import {returnAsync, sleep} from "./utils";
 
@@ -19,7 +19,7 @@ interface IRPCNetClient {
   isClosed(): boolean;
 
   onOpen?: () => void;
-  onBinary?: (data: Uint8Array) => void;
+  onStream?: (stream: RPCStream) => void;
   onError?: (errMsg: string) => void;
   onClose?: () => void;
 }
@@ -48,8 +48,13 @@ class WebSocketNetClient implements IRPCNetClient {
       this.logger.info(`connecting to ${url}`);
       this.reader =  new FileReader();
       this.reader.onload = (event?: ProgressEvent<FileReader>): void => {
-        if (event && event.target && this.onBinary) {
-          this.onBinary(new Uint8Array(event.target.result as ArrayBuffer));
+        if (event && event.target && this.onStream) {
+          const stream: RPCStream = new RPCStream();
+          stream.setWritePos(0);
+          stream.writeUint8Array(
+            new Uint8Array(event.target.result as ArrayBuffer),
+          );
+          this.onStream(stream);
         }
       };
 
@@ -119,7 +124,7 @@ class WebSocketNetClient implements IRPCNetClient {
   }
 
   public onOpen?: () => void;
-  public onBinary?: (data: Uint8Array) => void;
+  public onStream?: (stream: RPCStream) => void;
   public onError?: (errMsg: string) => void;
   public onClose?: () => void;
 }
@@ -127,24 +132,45 @@ class WebSocketNetClient implements IRPCNetClient {
 class ClientCallbackItem {
   public readonly id: number;
   public readonly sendDeadlineMS: number;
-  public readonly receiveDeadlineMS: number;
+  public receiveDeadlineMS: number;
+  public serverTimeoutMS: number;
   public readonly deferred: Deferred<RPCCallBackType>;
   public readonly stream: RPCStream;
-  public readonly isSend: boolean;
 
   public constructor(
     id: number,
     sendDeadlineMS: number,
-    receiveDeadlineMS: number,
+    serverTimeoutMS: number,
     deferred: Deferred<RPCCallBackType>,
+    stream: RPCStream,
   ) {
     this.id = id;
     this.sendDeadlineMS = sendDeadlineMS;
-    this.receiveDeadlineMS = receiveDeadlineMS;
+    this.receiveDeadlineMS = 0;
+    this.serverTimeoutMS = serverTimeoutMS;
     this.deferred = deferred;
-    this.stream = new RPCStream();
-    this.isSend = false;
+    this.stream = stream;
   }
+}
+
+function isAfterSequence(
+  baseSequence: number,
+  afterSequence: number,
+  ): boolean {
+  if (Number.isInteger(baseSequence) && Number.isInteger(afterSequence)) {
+    if (
+      afterSequence > baseSequence &&
+      afterSequence - baseSequence < 100000000
+    ) {
+      return true;
+    } else if (
+      afterSequence < baseSequence &&
+      afterSequence - baseSequence + 4294967295 < 100000000
+    ) {
+      return true;
+    }
+  }
+  return false;
 }
 
 export
@@ -156,23 +182,89 @@ class RPCClient {
   private tryConnectCount: number;
   private cbSeed: number;
   private readonly logger: Logger;
-  private readonly pools: Array<ClientCallbackItem>;
+  private pools: Array<ClientCallbackItem>;
+  private readonly clientTimeoutMS: number;
+  private readonly serverTimeoutMS: number;
+  private serverConn: string;
+  private serverSequence: number;
 
   public constructor() {
     this.url = "";
     this.checkTimer = null;
     this.tryConnectCount = 0;
-    this.cbSeed = 0;
+    this.cbSeed = 1;
     this.logger = new Logger();
     this.pools = new Array<ClientCallbackItem>();
+
+    this.clientTimeoutMS = 15000;
+    this.serverTimeoutMS = 15000;
+
+    this.serverConn = "";
+    this.serverSequence = 0;
   }
 
   private onConnect(): void {
-    console.log(this.url + " onOpen", this.pools);
+    //console.log(this.url + " onOpen", this.pools);
   }
 
-  private onBinary(data: Uint8Array): void {
-    console.log(this.url + " onBinary", data);
+  private onStream(stream: RPCStream): void {
+    // console.log(this.url + " onStream", stream);
+    const callbackID: number = stream.getClientCallbackID();
+
+    if (callbackID === 0) { // server stream
+      let [instruction, ok] = stream.readString();
+      if (ok && instruction === "#.connection.openInformation") {
+        let [connID, ok1] = stream.readUint64();
+        let [connSecurity, ok2] = stream.readString();
+        let [connSequence, ok3] = stream.readUint64();
+        let nConnID: number = connID.toNumber();
+        let nConnSequence: number = connSequence.toNumber();
+        if (
+          ok1 &&
+          ok2 &&
+          ok3 &&
+          nConnID < 4294967295 &&
+          nConnSequence < 4294967295
+        ) {
+          this.serverConn = `${nConnID}-${connSecurity}`;
+          if (!this.setServerSequence(nConnSequence)) {
+            // Todo: error
+          }
+        } else {
+          // Todo: error
+        }
+      }
+    } else {
+      // Todo: callback
+      let [success, ok] = stream.readBool();
+      if (ok) {
+        if (success) {
+          let [value, ok1] = stream.read();
+          if (ok1 && !stream.canRead()) {
+            this.resolveCallback(callbackID, [value, null]);
+          } else {
+            this.resolveCallback(callbackID, [null, new RPCError(
+              "data format error",
+              "",
+            )]);
+          }
+        } else {
+          let [message, ok1] = stream.readString();
+          let [debug, ok2] = stream.readString();
+          if (ok1 && ok2 && !stream.canRead()) {
+            this.resolveCallback(callbackID, [null, new RPCError(
+              message,
+              debug,
+            )]);
+          } else {
+            this.resolveCallback(callbackID, [null, new RPCError(
+              "data format error",
+              "",
+            )]);
+          }
+        }
+      }
+    }
   }
 
   private onError(errMsg: string): void {
@@ -180,22 +272,146 @@ class RPCClient {
   }
 
   private onDisconnect(): void {
-    console.log(this.url + " onClose");
+    this.serverSequence = 0;
   }
 
-  public async send(): Promise<RPCCallBackType> {
-    const deferred: Deferred<RPCCallBackType> = new Deferred<RPCCallBackType>();
+  private getCallbackID(): number {
+    this.cbSeed++;
+    if (this.cbSeed === 4294967295) {
+      this.cbSeed = 1;
+    }
+    return this.cbSeed;
+  }
+
+  private setServerSequence(serverSequence: number): boolean {
+    if (Number.isInteger(serverSequence) && serverSequence > 0) {
+      // ok, server sequence and client sequence is fit
+      if (serverSequence === this.cbSeed) {
+        this.serverSequence = serverSequence;
+        return true;
+      } else {
+        if (!isAfterSequence(serverSequence, this.cbSeed)) {
+          return false;
+        }
+        for (let i: number = 0; i < this.pools.length; i++) {
+          if (isAfterSequence(
+            serverSequence,
+            this.pools[i].stream.getClientCallbackID(),
+          )) {
+            // (receiveDeadlineMS === 0) means item not send
+            this.pools[i].receiveDeadlineMS = 0;
+          }
+        }
+        this.checkTimeout();
+        this.serverSequence = serverSequence;
+        this.checkSend();
+        return true;
+      }
+    } else {
+      return false;
+    }
+  }
+
+  private registerCallback(
+    id: number,
+    deferred: Deferred<RPCCallBackType>,
+    stream: RPCStream,
+    ): ClientCallbackItem {
+    const ret: ClientCallbackItem = new ClientCallbackItem(
+      id,
+      new Date().getTime() + this.clientTimeoutMS,
+      this.serverTimeoutMS,
+      deferred,
+      stream,
+    );
+    this.pools.push(ret);
+    return ret;
+  }
+
+  private resolveCallback(id: number, ret: RPCCallBackType): boolean {
+    const item: ClientCallbackItem | undefined = this.pools.find(
+      o => o.id === id,
+    );
+    if (item) {
+      this.pools = this.pools.filter(o => o.id !== id);
+      item.deferred.doResolve(ret);
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  public async send(actionPath: string, ...args: Array<RPCValue>)
+    : Promise<RPCCallBackType> {
     // check rpc client is not open
     if (!this.checkTimer) {
-      deferred.doResolve([null, new RPCError(
-        "rpc-client: closed",
+      return returnAsync([null, new RPCError(
+        "RPCClient: send: client not opened",
         "",
       )]);
-      return deferred.promise;
     }
 
-    deferred.doResolve([new RPCInt64(this.cbSeed), null]);
+    // write the stream
+    const stream: RPCStream = new RPCStream();
+    // write target
+    if (!stream.writeString(actionPath)) {
+      return returnAsync([null, new RPCError(
+        "RPCClient: send: actionPath is not a valid string",
+        "",
+      )]);
+    }
+    // write depth (this will never failed)
+    stream.writeUint64(new RPCUint64(0));
+    // write from (this will never failed)
+    stream.writeString("@");
+    // write args
+    for (let i: number = 0; i < args.length; i++) {
+      if (!stream.write(args[i])) {
+        return returnAsync([null, new RPCError(
+          "RPCClient: send: args not supported",
+          "",
+        )]);
+      }
+    }
+
+    const id: number = this.getCallbackID();
+    stream.setClientCallbackID(id);
+    const deferred: Deferred<RPCCallBackType> = new Deferred<RPCCallBackType>();
+    this.registerCallback(id, deferred, stream);
+
+    // speed up connect if not connected
+    this.tryConnectCount = 0;
+    this.checkConnect();
+    // speed up the send
+    this.checkSend();
     return deferred.promise;
+  }
+
+  private checkSend(): void {
+    if (
+      this.netClient &&
+      this.netClient.isConnected() &&
+      this.serverSequence > 0
+    ) {
+      for (let i: number = 0; i < this.pools.length; i++) {
+        const item: ClientCallbackItem = this.pools[i];
+        // (receiveDeadlineMS === 0) means item not send
+        if (item.receiveDeadlineMS === 0) {
+          // set the server sequence
+          item.stream.setClientConnInfo(this.serverSequence);
+          // send
+          this.netClient.send(item.stream.getBuffer());
+          // update the server sequence
+          this.serverSequence = item.stream.getClientCallbackID();
+          // mark receive deadline
+          item.receiveDeadlineMS = new Date().getTime() + item.serverTimeoutMS;
+        }
+      }
+    }
+  }
+
+  private checkTimeout(): void {
+    console.log("checkTimeout", this.cbSeed);
   }
 
   public open(url: string): boolean {
@@ -205,7 +421,7 @@ class RPCClient {
         this.url = url;
         this.netClient = new WebSocketNetClient(this.logger);
         this.netClient.onOpen = this.onConnect.bind(this);
-        this.netClient.onBinary = this.onBinary.bind(this);
+        this.netClient.onStream = this.onStream.bind(this);
         this.netClient.onError = this.onError.bind(this);
         this.netClient.onClose = this.onDisconnect.bind(this);
       } else {
@@ -214,11 +430,11 @@ class RPCClient {
 
       // start check timer
       this.tryConnectCount = 0;
-      this.checkConnect();
-      this.checkTimer = setInterval(
-        this.checkConnect.bind(this),
-        this.checkTimerInterval,
-      );
+      this.checkTimer = setInterval(() => {
+        this.checkTimeout();
+        this.checkConnect();
+        this.checkSend();
+      }, this.checkTimerInterval);
       return true;
     } else {
       return false;
@@ -229,21 +445,37 @@ class RPCClient {
     if (this.netClient && this.netClient.isConnected()) {
       this.tryConnectCount = 0;
     } else if (this.netClient && this.netClient.isClosed()) {
-      if (this.tryConnectCount < 20) {
-        if (
-          this.tryConnectCount == 0 ||
-          this.tryConnectCount == 2 ||
-          this.tryConnectCount == 5 ||
-          this.tryConnectCount == 9 ||
-          this.tryConnectCount == 14
-        ) {
-          this.netClient.connect(this.url);
+      if (this.pools.length > 0) {
+        if (this.tryConnectCount < 15) {
+          if (
+            this.tryConnectCount == 0 ||
+            this.tryConnectCount == 2 ||
+            this.tryConnectCount == 5 ||
+            this.tryConnectCount == 10
+          ) {
+            this.netClient.connect(
+              this.url + `?conn=${this.serverConn}`,
+            );
+          }
+        } else {
+          // average 10 time unit, add random to reduce server concurrency
+          if (this.tryConnectCount % 15 === 0) {
+            this.tryConnectCount += Math.floor(Math.random() * 10);
+            this.netClient.connect(
+              this.url + `?conn=${this.serverConn}`,
+            );
+          }
         }
       } else {
-        if (this.tryConnectCount % 20 == 0) {
-          this.netClient.connect(this.url);
+        // average 20 time unit, add random to reduce server concurrency
+        if (this.tryConnectCount % 30 === 0) {
+          this.tryConnectCount += Math.floor(Math.random() * 20);
+          this.netClient.connect(
+            this.url + `?conn=${this.serverConn}`,
+          );
         }
       }
+
       this.tryConnectCount++;
     } else {
       // netClient is connecting or closing, so do nothing
@@ -263,7 +495,7 @@ class RPCClient {
           await sleep(10);
         }
         this.netClient.onOpen = undefined;
-        this.netClient.onBinary = undefined;
+        this.netClient.onStream = undefined;
         this.netClient.onError = undefined;
         this.netClient.onClose = undefined;
         this.netClient = undefined;
