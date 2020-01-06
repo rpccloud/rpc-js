@@ -278,21 +278,4 @@ describe("RPCClient tests", () => {
       },
     );
   });
-
-  test("RPCClient_dev", async () => {
-    const client1: RPCClient = new RPCClient();
-   // (client1 as any).checkTimerInterval = 50;
-    client1.open("ws://127.0.0.1:12345/ws");
-
-    for (let i: number = 0; i < 100; i++) {
-      let [value, err] = await client1.send(
-        "$.user:sayHello",
-        i.toString(),
-      );
-
-      console.log(value, err);
-    }
-
-    await client1.close();
-  });
 });
