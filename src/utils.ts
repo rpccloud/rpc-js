@@ -1,4 +1,4 @@
-import {Deferred} from "./deferred";
+import { Deferred } from "./deferred";
 
 function pad2(num: number): string {
   let norm: number = Math.floor(Math.abs(num));
@@ -29,8 +29,7 @@ function pad4(num: number): string {
   }
 }
 
-export
-function stringToUTF8(v: string): Array<number> {
+export function stringToUTF8(v: string): Array<number> {
   let ret: Array<number> = [];
   let strPos: number = 0;
   let ch: number;
@@ -60,8 +59,7 @@ function stringToUTF8(v: string): Array<number> {
   return ret;
 }
 
-export
-function utf8ToString(
+export function utf8ToString(
   v: Uint8Array,
   start?: number,
   end?: number,
@@ -155,8 +153,7 @@ function utf8ToString(
   return [String.fromCodePoint(...retArray), true];
 }
 
-export
-function convertToIsoDateString(date: Date): string {
+export function convertToIsoDateString(date: Date): string {
   if (date === null || date === undefined) {
     return "";
   }
@@ -177,8 +174,7 @@ function convertToIsoDateString(date: Date): string {
     ":" + pad2(tzo % 60);
 }
 
-export
-async function sleep(timeMS: number): Promise<any> {
+export async function sleep(timeMS: number): Promise<any> {
   const deferred: Deferred<any> = new Deferred<any>();
   setTimeout(() => {
     deferred.doResolve();
@@ -186,9 +182,8 @@ async function sleep(timeMS: number): Promise<any> {
   return deferred.promise;
 }
 
-export
-async function returnAsync<T>(value: T): Promise<T> {
-  return new Promise ((
+export async function returnAsync<T>(value: T): Promise<T> {
+  return new Promise((
     resolve: (value?: T | PromiseLike<T>) => void,
   ) => {
     resolve(value);

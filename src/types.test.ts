@@ -1,4 +1,4 @@
-import {RPCError, RPCInt64, RPCUint64} from "./types";
+import { RPCError, RPCInt64, RPCUint64 } from "./types";
 
 describe("RPCError tests", () => {
   test("RPCError_new", () => {

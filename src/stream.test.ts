@@ -1,5 +1,5 @@
-import {RPCStream} from "./stream";
-import {RPCFloat64, RPCInt64, RPCUint64, RPCValue} from "./types";
+import { RPCStream } from "./stream";
+import { RPCFloat64, RPCInt64, RPCUint64, RPCValue } from "./types";
 
 const testCollections: Map<string, Array<Array<any>>> = new Map([
   ["null", [

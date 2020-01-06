@@ -77,7 +77,7 @@ export class RPCInt64 {
           (~bytes[0] & 0xFF);
         // v >= -9007199254740991
         if (v < 9007199254740991) {
-          return new RPCInt64( -v - 1);
+          return new RPCInt64(-v - 1);
         }
       }
 
@@ -106,7 +106,7 @@ export class RPCUint64 {
   private bytes: Uint8Array;
 
   public constructor(v: number) {
-    this.value =  (Number.isSafeInteger(v) && v >= 0) ? v : NaN;
+    this.value = (Number.isSafeInteger(v) && v >= 0) ? v : NaN;
     this.bytes = new Uint8Array(0);
   }
 

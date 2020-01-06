@@ -1,4 +1,4 @@
-import {stringToUTF8, convertToIsoDateString, utf8ToString} from "./utils";
+import { stringToUTF8, convertToIsoDateString, utf8ToString } from "./utils";
 
 describe("utils tests", () => {
   test("stringToUTF8_utf8ToString", () => {

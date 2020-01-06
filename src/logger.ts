@@ -1,4 +1,4 @@
-import {convertToIsoDateString} from "./utils";
+import { convertToIsoDateString } from "./utils";
 
 export const LogLevelOff: number = 0;
 export const LogLevelFatal: number = 1;
