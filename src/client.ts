@@ -204,7 +204,7 @@ class RPCClient {
   }
 
   private onConnect(): void {
-    //console.log(this.url + " onOpen", this.pools);
+    console.log(this.url + " onOpen", this.pools);
   }
 
   private onStream(stream: RPCStream): void {

@@ -27,12 +27,12 @@
   },
   "homepage": "https://github.com/rpccloud-ts/rpcc#readme",
   "devDependencies": {
-    "@types/jest": "^24.0.18",
-    "@types/ws": "^6.0.3",
-    "jest": "^24.9.0",
-    "ts-jest": "^24.0.2",
-    "tslint": "^5.19.0",
-    "typescript": "^3.6.2",
-    "ws": "^7.1.2"
+    "@types/jest": "^24.0.25",
+    "@types/ws": "^6.0.4",
+    "jest": "24.9.0",
+    "ts-jest": "24.2.0",
+    "tslint": "5.20.1",
+    "typescript": "3.7.4",
+    "ws": "7.2.1"
   }
 }
