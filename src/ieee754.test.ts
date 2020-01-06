@@ -1,4 +1,4 @@
-import {Ieee754} from "./ieee754";
+import { Ieee754 } from "./ieee754";
 
 describe("ieee754 tests", () => {
   test("Ieee754_read_write", () => {

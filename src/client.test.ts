@@ -1,14 +1,14 @@
 import * as WebSocket from "ws";
-import {Deferred} from "./deferred";
-import {RPCClient, WebSocketNetClient} from "./client";
-import {Logger} from "./logger";
-import {sleep} from "./utils";
-import {RPCStream} from "./stream";
+import { Deferred } from "./deferred";
+import { RPCClient, WebSocketNetClient } from "./client";
+import { Logger } from "./logger";
+import { sleep } from "./utils";
+import { RPCStream } from "./stream";
 
 async function runWebSocketServer(
   port: number,
   fn: (server: WebSocket.Server, logger: Logger) => Promise<any>,
-  ): Promise<any> {
+): Promise<any> {
   const deferred: Deferred<any> = new Deferred<any>();
 
   const wss: WebSocket.Server = new WebSocket.Server({ port: port });
@@ -236,7 +236,7 @@ describe("RPCClient tests", () => {
     (client1 as any).checkTimerInterval = 100;
     (client1 as any).pools.push(true);  // to open fast conn mode
     client1.open("ws://127.0.0.1:22332");
-    await sleep(2300);
+    await sleep(1800);
 
     const callTimes: Array<Date> = [];
     const logLength: number = (console.log as any).mock.calls.length;

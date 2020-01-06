@@ -1,15 +1,14 @@
 // import {Logger} from "./logger";
 
-import {Logger} from "./logger";
-import {Deferred} from "./deferred";
-import {RPCError, RPCUint64, RPCValue} from "./types";
-import {RPCStream} from "./stream";
-import {returnAsync, sleep} from "./utils";
+import { Logger } from "./logger";
+import { Deferred } from "./deferred";
+import { RPCError, RPCUint64, RPCValue } from "./types";
+import { RPCStream } from "./stream";
+import { returnAsync, sleep } from "./utils";
 
 type RPCCallBackType = [RPCValue, RPCError | null];
 
-export
-interface IRPCNetClient {
+export interface IRPCNetClient {
   send(data: Uint8Array): boolean;
 
   connect(serverURL: string): boolean;
@@ -24,8 +23,7 @@ interface IRPCNetClient {
   onClose?: () => void;
 }
 
-export
-class WebSocketNetClient implements IRPCNetClient {
+export class WebSocketNetClient implements IRPCNetClient {
   private webSocket?: WebSocket;
   private reader?: FileReader;
   private readonly logger: Logger;
@@ -46,7 +44,7 @@ class WebSocketNetClient implements IRPCNetClient {
   public connect(url: string): boolean {
     if (this.webSocket === undefined) {
       this.logger.info(`connecting to ${url}`);
-      this.reader =  new FileReader();
+      this.reader = new FileReader();
       this.reader.onload = (event?: ProgressEvent<FileReader>): void => {
         if (event && event.target && this.onStream) {
           const stream: RPCStream = new RPCStream();
@@ -156,7 +154,7 @@ class ClientCallbackItem {
 function isAfterSequence(
   baseSequence: number,
   afterSequence: number,
-  ): boolean {
+): boolean {
   if (Number.isInteger(baseSequence) && Number.isInteger(afterSequence)) {
     if (
       afterSequence > baseSequence &&
@@ -173,8 +171,7 @@ function isAfterSequence(
   return false;
 }
 
-export
-class RPCClient {
+export class RPCClient {
   private netClient?: IRPCNetClient;
   private url: string;
   private checkTimer: any;
@@ -316,7 +313,7 @@ class RPCClient {
     id: number,
     deferred: Deferred<RPCCallBackType>,
     stream: RPCStream,
-    ): ClientCallbackItem {
+  ): ClientCallbackItem {
     const ret: ClientCallbackItem = new ClientCallbackItem(
       id,
       new Date().getTime() + this.clientTimeoutMS,

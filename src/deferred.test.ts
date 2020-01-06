@@ -1,4 +1,4 @@
-import {Deferred} from "./deferred";
+import { Deferred } from "./deferred";
 
 describe("deferred tests", () => {
   test("Deferred_new", async () => {
