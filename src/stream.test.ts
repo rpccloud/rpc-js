@@ -1,5 +1,5 @@
-import { RPCStream } from "./stream";
-import { RPCFloat64, RPCInt64, RPCUint64, RPCAny } from "./types";
+import {RPCStream} from "./stream";
+import {RPCFloat64, RPCInt64, RPCUint64, RPCAny} from "./types";
 
 const testCollections: Map<string, Array<Array<any>>> = new Map([
   ["null", [
@@ -413,6 +413,23 @@ describe("stream tests", () => {
     expect(stream.canRead()).toBe(false);
   });
 
+  test("RPCStream_isReadFinish", () => {
+    const stream: RPCStream = new RPCStream();
+    expect(stream.isReadFinish()).toBe(true);
+
+    stream.setWritePos(700);
+    stream.setReadPos(700);
+    expect(stream.isReadFinish()).toBe(true);
+
+    stream.setWritePos(700);
+    stream.setReadPos(699);
+    expect(stream.isReadFinish()).toBe(false);
+
+    stream.setWritePos(700);
+    stream.setReadPos(701);
+    expect(stream.isReadFinish()).toBe(false);
+  });
+
   test("RPCStream_readNBytes", () => {
     const stream: RPCStream = new RPCStream();
     stream.setWritePos(1000);
@@ -437,25 +454,24 @@ describe("stream tests", () => {
   test("RPCStream_getClientCallbackID_setClientCallbackID", () => {
     const stream: RPCStream = new RPCStream();
 
-    for (let i: number = 0; i < 10000; i++) {
-      stream.setClientCallbackID(i);
+    for (let i: number = 0; i < 100; i++) {
+      expect(stream.setClientCallbackID(i)).toStrictEqual(true);
       expect(stream.getClientCallbackID()).toBe(i);
     }
 
-    for (let i: number = 60000; i < 70000; i++) {
-      stream.setClientCallbackID(i);
+    for (let i: number = 0; i < 20000; i++) {
+      let random: number = Math.floor(Math.random() * 9007199254740991);
+      expect(stream.setClientCallbackID(random)).toStrictEqual(true);
+      expect(stream.getClientCallbackID()).toBe(random);
+    }
+
+    for (let i: number = 9007199254740990; i <= 9007199254740991; i++) {
+      expect(stream.setClientCallbackID(i)).toStrictEqual(true);
       expect(stream.getClientCallbackID()).toBe(i);
     }
 
-    for (let i: number = 16770000; i < 16780000; i++) {
-      stream.setClientCallbackID(i);
-      expect(stream.getClientCallbackID()).toBe(i);
-    }
-
-    for (let i: number = 4294957296; i <= 4294967295; i++) {
-      stream.setClientCallbackID(i);
-      expect(stream.getClientCallbackID()).toBe(i);
-    }
+    expect(stream.setClientCallbackID(-1)).toStrictEqual(false);
+    expect(stream.setClientCallbackID(9007199254740992)).toStrictEqual(false);
   });
 
   test("RPCStream_writeNull", () => {
