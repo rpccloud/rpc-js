@@ -1,12 +1,5 @@
-import { RPCError, RPCInt64, RPCUint64 } from "./types";
+import { RPCInt64, RPCUint64 } from "./types";
 
-describe("RPCError tests", () => {
-  test("RPCError_new", () => {
-    const v1: RPCError = new RPCError("message", "debug");
-    expect(v1.getMessage()).toStrictEqual("message");
-    expect(v1.getDebug()).toStrictEqual("debug");
-  });
-});
 
 describe("RPCInt64 tests", () => {
   test("RPCInt64_fromBytes", () => {

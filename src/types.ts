@@ -11,24 +11,6 @@ export type RPCValue =
 export interface IRPCArray extends Array<RPCValue> { }
 export interface IRPCMap extends Map<string, RPCValue> { }
 
-export class RPCError {
-  private readonly message: string;
-  private readonly debug: string;
-
-  public constructor(message: string, debug: string) {
-    this.message = message;
-    this.debug = debug;
-  }
-
-  public getMessage(): string {
-    return this.message;
-  }
-
-  public getDebug(): string {
-    return this.debug;
-  }
-}
-
 export class RPCFloat64 {
   private readonly value: number;
 
