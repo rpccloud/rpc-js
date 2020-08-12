@@ -21,22 +21,24 @@ export class Ieee754 {
     e = s & ((1 << (-nBits)) - 1);
     s >>= (-nBits);
     nBits += eLen;
-    for (; nBits > 0; e = (e * 256) + buf[offset + i], i += d, nBits -= 8) { }
+    for (; nBits > 0; e = (e * 256) + buf[offset + i], i += d, nBits -= 8) {
+    }
 
     m = e & ((1 << (-nBits)) - 1);
     e >>= (-nBits);
     nBits += mLen;
-    for (; nBits > 0; m = (m * 256) + buf[offset + i], i += d, nBits -= 8) { }
+    for (; nBits > 0; m = (m * 256) + buf[offset + i], i += d, nBits -= 8) {
+    }
 
     if (e === 0) {
-      e = 1 - eBias
+      e = 1 - eBias;
     } else if (e === eMax) {
       return m ? NaN : ((s ? -1 : 1) * Infinity);
     } else {
       m = m + Math.pow(2, mLen);
       e = e - eBias;
     }
-    return (s ? -1 : 1) * m * Math.pow(2, e - mLen)
+    return (s ? -1 : 1) * m * Math.pow(2, e - mLen);
   }
 
   public static write(
@@ -89,11 +91,13 @@ export class Ieee754 {
       }
     }
 
-    for (; mLen >= 8; buf[offset + i] = m & 0xff, i += d, m /= 256, mLen -= 8) { }
+    for (; mLen >= 8; buf[offset + i] = m & 0xff, i += d, m /= 256, mLen -= 8) {
+    }
 
     e = (e << mLen) | m;
     eLen += mLen;
-    for (; eLen > 0; buf[offset + i] = e & 0xff, i += d, e /= 256, eLen -= 8) { }
+    for (; eLen > 0; buf[offset + i] = e & 0xff, i += d, e /= 256, eLen -= 8) {
+    }
 
     buf[offset + i - d] |= s * 128;
   }
