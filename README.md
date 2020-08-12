@@ -1,5 +1,8 @@
 # RPC Cloud JS
 
+[![Test](https://github.com/rpccloud/rpc-js/workflows/Test/badge.svg)](https://github.com/rpccloud/rpc-js/actions?query=workflow%3ATest)
+[![codecov](https://codecov.io/gh/rpccloud/rpc-js/branch/master/graph/badge.svg)](https://codecov.io/gh/rpccloud/rpc-js)
+
 ## Basic Setup
 
 ### Module and Dependencies
