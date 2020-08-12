@@ -9,7 +9,8 @@
     "compile": "tsc",
     "precoverage": "npm run compile",
     "coverage": "jest --env=jsdom --colors --coverage test",
-    "postcoverage": "open ./coverage/lcov-report/index.html"
+    "showcoverage": "npm run coverage",
+    "postshowcoverage": "open ./coverage/lcov-report/index.html"
   },
   "repository": {
     "type": "git",
