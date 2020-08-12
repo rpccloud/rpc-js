@@ -1,5 +1,4 @@
-# rpcc
-
+# RPC Cloud JS
 
 ## Basic Setup
 
