@@ -1,8 +1,17 @@
 import {Ieee754} from "./ieee754";
-import {RPCFloat64, RPCInt64, RPCUint64, RPCAny} from "./types";
+import {
+  RPCBool, RPCFloat64, RPCInt64, RPCUint64,
+  RPCString, RPCBytes, RPCArray, RPCMap, RPCAny,
+} from "./types";
 import {stringToUTF8, utf8ToString} from "./utils";
 
+const streamBodyPos: number = 33;
+
 export class RPCStream {
+  public static readonly WriteOK: number = 0;
+  public static readonly UnsupportedType: number = 1;
+  public static readonly WriteOverflow: number = 2;
+
   private data: Uint8Array;
   private readPos: number;
   private writePos: number;
@@ -10,8 +19,8 @@ export class RPCStream {
   public constructor() {
     this.data = new Uint8Array(1024);
     this.data[0] = 1;
-    this.readPos = 17;
-    this.writePos = 17;
+    this.readPos = streamBodyPos;
+    this.writePos = streamBodyPos;
   }
 
   private enlarge(size: number): void {
@@ -36,14 +45,6 @@ export class RPCStream {
     }
   }
 
-  public writeUint8Array(value: Uint8Array): void {
-    this.enlarge(this.writePos + value.byteLength);
-    for (let n of value) {
-      this.data[this.writePos] = n;
-      this.writePos++;
-    }
-  }
-
   private peekByte(): number {
     if (this.readPos < this.writePos) {
       return this.data[this.readPos];
@@ -61,7 +62,7 @@ export class RPCStream {
         return ret;
       }
     }
-    return new Uint8Array([]);
+    return new Uint8Array(0);
   }
 
   private putUint8Bytes(value: Uint8Array): void {
@@ -91,6 +92,7 @@ export class RPCStream {
 
   public setWritePos(writePos: number): boolean {
     if (writePos >= 0) {
+      this.enlarge(writePos);
       this.writePos = writePos;
       return true;
     } else {
@@ -102,57 +104,73 @@ export class RPCStream {
     return this.data.slice(0, this.writePos);
   }
 
+  private writeLengthUnsafe(v: number): void {
+    this.putByte(v);
+    v >>>= 8;
+    this.putByte(v);
+    v >>>= 8;
+    this.putByte(v);
+    this.putByte(v >>> 8);
+  }
+
+  private static getLengthUnsafe(bytes: Uint8Array, start: number): number {
+    return (bytes[start + 3] & 0xFF) * 16777216 +
+      (bytes[start + 2] & 0xFF) * 65536 +
+      (bytes[start + 1] & 0xFF) * 256 +
+      (bytes[start] & 0xFF);
+  }
+
+  private writeUint64Unsafe(v: number): void {
+    this.putByte(v);
+    v = (v - (v & 0xFF)) / 256;
+    this.putByte(v);
+    v = (v - (v & 0xFF)) / 256;
+    this.putByte(v);
+    v = (v - (v & 0xFF)) / 256;
+    this.putByte(v);
+    v >>>= 8;
+    this.putByte(v);
+    v >>>= 8;
+    this.putByte(v);
+    this.putByte((v >>> 8) & 0x1F);
+    this.putByte(0x00);
+  }
+
   public reset(): void {
-    this.writePos = 17;
-    this.readPos = 17;
+    this.writePos = streamBodyPos;
+    this.readPos = streamBodyPos;
   }
 
   public getClientCallbackID(): number {
-    let data: Uint8Array = this.data;
-    return (data[4] * 16777216) + (
-      (data[3] << 16)
-      | (data[2] << 8)
-      | data[1]
-    );
+    let data: Uint8Array = this.data.slice(1, 9);
+    return RPCUint64.fromBytes(data).toNumber();
   }
 
-  public setClientCallbackID(id: number): void {
-    const originWritePos: number = this.writePos;
-
-    this.writePos = 1;
-    this.putByte(id);
-    id >>>= 8;
-    this.putByte(id);
-    id >>>= 8;
-    this.putByte(id);
-    this.putByte(id >>> 8);
-
-    this.writePos = originWritePos;
-  }
-
-  public setClientConnInfo(id: number): void {
-    const originWritePos: number = this.writePos;
-
-    this.writePos = 5;
-    this.putByte(id);
-    id >>>= 8;
-    this.putByte(id);
-    id >>>= 8;
-    this.putByte(id);
-    this.putByte(id >>> 8);
-
-    this.writePos = originWritePos;
+  public setClientCallbackID(id: number): boolean {
+    if (Number.isInteger(id) && id >= 0 && id <= 9007199254740991) {
+      const prevWritePos: number = this.writePos;
+      this.writePos = 1;
+      this.writeUint64Unsafe(id);
+      this.writePos = prevWritePos;
+      return true;
+    } else {
+      return false;
+    }
   }
 
   public canRead(): boolean {
     return this.readPos < this.writePos && this.readPos < this.data.byteLength;
   }
 
+  public isReadFinish(): boolean {
+    return this.readPos === this.writePos;
+  }
+
   public writeNull(): void {
     this.putByte(1);
   }
 
-  public writeBool(v: boolean): boolean {
+  public writeBool(v: RPCBool): boolean {
     if (v === null || v === undefined) {
       return false;
     }
@@ -239,7 +257,7 @@ export class RPCStream {
       return true;
     } else {
       const bytes: Uint8Array | null = value.getBytes();
-      if (isNaN(v) && bytes != null && bytes.byteLength == 8) {
+      if (bytes != null && bytes.byteLength === 8) {
         this.putByte(8);
         for (let i: number = 0; i < 8; i++) {
           this.putByte(bytes[i]);
@@ -277,19 +295,7 @@ export class RPCStream {
       return true;
     } else if (v <= 9007199254740991) {
       this.putByte(11);
-      this.putByte(v);
-      v = (v - (v & 0xFF)) / 256;
-      this.putByte(v);
-      v = (v - (v & 0xFF)) / 256;
-      this.putByte(v);
-      v = (v - (v & 0xFF)) / 256;
-      this.putByte(v);
-      v >>>= 8;
-      this.putByte(v);
-      v >>>= 8;
-      this.putByte(v);
-      this.putByte((v >>> 8) & 0x1F);
-      this.putByte(0x00);
+      this.writeUint64Unsafe(v);
       return true;
     } else {
       const bytes: Uint8Array | null = value.getBytes();
@@ -305,7 +311,7 @@ export class RPCStream {
     }
   }
 
-  public writeString(v: string): boolean {
+  public writeString(v: RPCString): boolean {
     if (v === null || v === undefined) {
       return false;
     }
@@ -332,12 +338,7 @@ export class RPCStream {
       // write header
       this.putByte(191);
       // write length
-      this.putByte(length);
-      length >>>= 8;
-      this.putByte(length);
-      length >>>= 8;
-      this.putByte(length);
-      this.putByte(length >>> 8);
+      this.writeLengthUnsafe(length);
       // write body
       this.putBytes(strBuffer);
       // write tail
@@ -346,7 +347,7 @@ export class RPCStream {
     }
   }
 
-  public writeBytes(v: Uint8Array): boolean {
+  public writeBytes(v: RPCBytes): boolean {
     if (v === null || v === undefined) {
       return false;
     }
@@ -366,19 +367,14 @@ export class RPCStream {
       // write header
       this.putByte(255);
       // write length
-      this.putByte(length);
-      length >>>= 8;
-      this.putByte(length);
-      length >>>= 8;
-      this.putByte(length);
-      this.putByte(length >>> 8);
+      this.writeLengthUnsafe(length);
       // write body
       this.putUint8Bytes(v);
       return true;
     }
   }
 
-  public writeArray(v: Array<any>): boolean {
+  public writeArray(v: RPCArray): boolean {
     if (v === null || v === undefined) {
       return false;
     }
@@ -399,13 +395,7 @@ export class RPCStream {
     this.writePos += 4;
 
     if (arrLen > 30) {
-      let writeLen: number = arrLen;
-      this.putByte(writeLen);
-      writeLen >>>= 8;
-      this.putByte(writeLen);
-      writeLen >>>= 8;
-      this.putByte(writeLen);
-      this.putByte(writeLen >>> 8);
+      this.writeLengthUnsafe(arrLen);
     }
 
     for (let i: number = 0; i < arrLen; i++) {
@@ -417,20 +407,14 @@ export class RPCStream {
 
     // write total length
     const endPos: number = this.writePos;
-    let totalLength: number = endPos - startPos;
     this.writePos = startPos + 1;
-    this.putByte(totalLength);
-    totalLength >>>= 8;
-    this.putByte(totalLength);
-    totalLength >>>= 8;
-    this.putByte(totalLength);
-    this.putByte(totalLength >>> 8);
+    this.writeLengthUnsafe(endPos - startPos);
     this.writePos = endPos;
 
     return true;
   }
 
-  public writeMap(v: Map<string, any>): boolean {
+  public writeMap(v: RPCMap): boolean {
     if (v === null || v === undefined) {
       return false;
     }
@@ -448,13 +432,7 @@ export class RPCStream {
     }
     this.writePos += 4;
     if (mapLen > 30) {
-      let writeLen: number = mapLen;
-      this.putByte(writeLen);
-      writeLen >>>= 8;
-      this.putByte(writeLen);
-      writeLen >>>= 8;
-      this.putByte(writeLen);
-      this.putByte(writeLen >>> 8);
+      this.writeLengthUnsafe(mapLen);
     }
 
     for (let [key, value] of v) {
@@ -470,14 +448,8 @@ export class RPCStream {
 
     // write total length
     const endPos: number = this.writePos;
-    let totalLength: number = endPos - startPos;
     this.writePos = startPos + 1;
-    this.putByte(totalLength);
-    totalLength >>>= 8;
-    this.putByte(totalLength);
-    totalLength >>>= 8;
-    this.putByte(totalLength);
-    this.putByte(totalLength >>> 8);
+    this.writeLengthUnsafe(endPos - startPos);
     this.writePos = endPos;
 
     return true;
@@ -529,7 +501,7 @@ export class RPCStream {
     }
   }
 
-  public readBool(): [boolean, boolean] {
+  public readBool(): [RPCBool, boolean] {
     const ch: number = this.peekByte();
 
     if (ch === 2) {
@@ -648,7 +620,7 @@ export class RPCStream {
     }
   }
 
-  public readString(): [string, boolean] {
+  public readString(): [RPCString, boolean] {
     const ch: number = this.peekByte();
     if (ch === 128) {
       this.readPos++;
@@ -669,11 +641,7 @@ export class RPCStream {
       const oldReadPos: number = this.readPos;
       const lenBytes: Uint8Array = this.readNBytes(5);
       if (lenBytes.byteLength === 5) {
-        const length: number =
-          (lenBytes[4] & 0xFF) * 16777216 +
-          (lenBytes[3] & 0xFF) * 65536 +
-          (lenBytes[2] & 0xFF) * 256 +
-          (lenBytes[1] & 0xFF);
+        const length: number = RPCStream.getLengthUnsafe(lenBytes, 1);
         if (length > 62) {
           const bytes: Uint8Array = this.readNBytes(length + 1);
           if (bytes.byteLength === length + 1 && bytes[length] === 0) {
@@ -690,7 +658,7 @@ export class RPCStream {
     return ["", false];
   }
 
-  public readBytes(): [Uint8Array, boolean] {
+  public readBytes(): [RPCBytes, boolean] {
     const ch: number = this.peekByte();
     if (ch === 192) {
       this.readPos++;
@@ -705,11 +673,7 @@ export class RPCStream {
       const oldReadPos: number = this.readPos;
       const lenBytes: Uint8Array = this.readNBytes(5);
       if (lenBytes.byteLength === 5) {
-        const length: number =
-          (lenBytes[4] & 0xFF) * 16777216 +
-          (lenBytes[3] & 0xFF) * 65536 +
-          (lenBytes[2] & 0xFF) * 256 +
-          (lenBytes[1] & 0xFF);
+        const length: number = RPCStream.getLengthUnsafe(lenBytes, 1);
         if (length > 62) {
           const bytes: Uint8Array = this.readNBytes(length);
           if (bytes.byteLength === length) {
@@ -724,7 +688,7 @@ export class RPCStream {
     return [new Uint8Array([]), false];
   }
 
-  public readArray(): [Array<RPCAny>, boolean] {
+  public readArray(): [RPCArray, boolean] {
     const ch: number = this.peekByte();
 
     if (ch >= 64 && ch < 96) {
@@ -739,25 +703,13 @@ export class RPCStream {
         arrLen = ch - 64;
         const lenBytes: Uint8Array = this.readNBytes(5);
         if (lenBytes.byteLength === 5) {
-          totalLen =
-            (lenBytes[4] & 0xFF) * 16777216 +
-            (lenBytes[3] & 0xFF) * 65536 +
-            (lenBytes[2] & 0xFF) * 256 +
-            (lenBytes[1] & 0xFF);
+          totalLen = RPCStream.getLengthUnsafe(lenBytes, 1);
         }
       } else {
         const lenBytes: Uint8Array = this.readNBytes(9);
         if (lenBytes.byteLength === 9) {
-          totalLen =
-            (lenBytes[4] & 0xFF) * 16777216 +
-            (lenBytes[3] & 0xFF) * 65536 +
-            (lenBytes[2] & 0xFF) * 256 +
-            (lenBytes[1] & 0xFF);
-          arrLen =
-            (lenBytes[8] & 0xFF) * 16777216 +
-            (lenBytes[7] & 0xFF) * 65536 +
-            (lenBytes[6] & 0xFF) * 256 +
-            (lenBytes[5] & 0xFF);
+          totalLen = RPCStream.getLengthUnsafe(lenBytes, 1);
+          arrLen = RPCStream.getLengthUnsafe(lenBytes, 5);
         }
       }
 
@@ -782,7 +734,7 @@ export class RPCStream {
     return [[], false];
   }
 
-  public readMap(): [Map<string, RPCAny>, boolean] {
+  public readMap(): [RPCMap, boolean] {
     const ch: number = this.peekByte();
     if (ch >= 96 && ch < 128) {
       let mapLen: number = 0;
