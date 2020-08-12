@@ -56,7 +56,7 @@ export class RPCError {
 
   public addDebug(debug: string | null): RPCError {
     if (debug != null && debug != "") {
-      if (this.debug != null && this.debug != "") {
+      if (this.debug == null || this.debug == "") {
         this.debug = debug;
       } else {
         this.debug += "\n";
