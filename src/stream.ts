@@ -54,7 +54,7 @@ export class RPCStream {
   }
 
   private readNBytes(n: number): Uint8Array {
-    if (n > 0 && Number.isInteger(n)) {
+    if (n > 0 && Number.isSafeInteger(n)) {
       const end: number = this.readPos + n;
       if (end <= this.writePos) {
         const ret: Uint8Array = this.data.slice(this.readPos, end);

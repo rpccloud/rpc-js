@@ -55,7 +55,7 @@ export class Logger {
 
   public setLevel(level: number): boolean {
     if (
-      Number.isInteger(level) &&
+      Number.isSafeInteger(level) &&
       level >= LogLevelOff && level <= LogLevelAll
     ) {
       this.level = level;
@@ -107,7 +107,7 @@ export class Logger {
   public log(outputLevel: number, tag: string, msg: string): void {
     const level: number = this.level;
 
-    if (Number.isInteger(outputLevel) && (level & outputLevel) > 0) {
+    if (Number.isSafeInteger(outputLevel) && (level & outputLevel) > 0) {
       const subscriptions: Array<LogSubscription> = this.subscriptions;
       const isoTimeNow: string = convertToIsoDateString(new Date());
       const logMsg: string = `${isoTimeNow}${tag}${msg}\n`;
