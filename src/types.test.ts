@@ -78,7 +78,7 @@ describe("RPCInt64 tests", () => {
         0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
       ]));
     expect(isNaN(bugInt.toNumber())).toBe(true);
-    expect(bugInt.getBytes()).toStrictEqual(new Uint8Array(0));
+    expect(bugInt.getBytes()).toStrictEqual(null);
   });
 });
 
@@ -124,6 +124,6 @@ describe("RPCUint64 tests", () => {
         0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
       ]));
     expect(isNaN(bugUint.toNumber())).toBe(true);
-    expect(bugUint.getBytes()).toStrictEqual(new Uint8Array(0));
+    expect(bugUint.getBytes()).toStrictEqual(null);
   });
 });

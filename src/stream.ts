@@ -1,5 +1,5 @@
 import {Ieee754} from "./ieee754";
-import {RPCFloat64, RPCInt64, RPCUint64, RPCValue} from "./types";
+import {RPCFloat64, RPCInt64, RPCUint64, RPCAny} from "./types";
 import {stringToUTF8, utf8ToString} from "./utils";
 
 export class RPCStream {
@@ -238,8 +238,8 @@ export class RPCStream {
       }
       return true;
     } else {
-      const bytes: Uint8Array = value.getBytes();
-      if (isNaN(v) && bytes.byteLength == 8) {
+      const bytes: Uint8Array | null = value.getBytes();
+      if (isNaN(v) && bytes != null && bytes.byteLength == 8) {
         this.putByte(8);
         for (let i: number = 0; i < 8; i++) {
           this.putByte(bytes[i]);
@@ -292,8 +292,8 @@ export class RPCStream {
       this.putByte(0x00);
       return true;
     } else {
-      const bytes: Uint8Array = value.getBytes();
-      if (isNaN(v) && bytes.byteLength == 8) {
+      const bytes: Uint8Array | null = value.getBytes();
+      if (isNaN(v) && bytes != null && bytes.byteLength == 8) {
         this.putByte(11);
         for (let i: number = 0; i < 8; i++) {
           this.putByte(bytes[i]);
@@ -724,7 +724,7 @@ export class RPCStream {
     return [new Uint8Array([]), false];
   }
 
-  public readArray(): [Array<RPCValue>, boolean] {
+  public readArray(): [Array<RPCAny>, boolean] {
     const ch: number = this.peekByte();
 
     if (ch >= 64 && ch < 96) {
@@ -734,7 +734,7 @@ export class RPCStream {
 
       if (ch === 64) {
         this.readPos++;
-        return [new Array<RPCValue>(), true];
+        return [new Array<RPCAny>(), true];
       } else if (ch < 95) {
         arrLen = ch - 64;
         const lenBytes: Uint8Array = this.readNBytes(5);
@@ -762,7 +762,7 @@ export class RPCStream {
       }
 
       if (arrLen > 0 && totalLen > 4) {
-        const ret: Array<RPCValue> = new Array<RPCValue>();
+        const ret: Array<RPCAny> = new Array<RPCAny>();
 
         for (let i: number = 0; i < arrLen; i++) {
           let [v, ok] = this.read();
@@ -782,7 +782,7 @@ export class RPCStream {
     return [[], false];
   }
 
-  public readMap(): [Map<string, RPCValue>, boolean] {
+  public readMap(): [Map<string, RPCAny>, boolean] {
     const ch: number = this.peekByte();
     if (ch >= 96 && ch < 128) {
       let mapLen: number = 0;
@@ -791,7 +791,7 @@ export class RPCStream {
 
       if (ch == 96) {
         this.readPos++;
-        return [new Map<string, RPCValue>(), true];
+        return [new Map<string, RPCAny>(), true];
       } else if (ch < 127) {
         mapLen = ch - 96;
         const lenBytes: Uint8Array = this.readNBytes(5);
@@ -819,20 +819,20 @@ export class RPCStream {
       }
 
       if (mapLen > 0 && totalLen > 4) {
-        const ret: Map<string, RPCValue> = new Map<string, RPCValue>();
+        const ret: Map<string, RPCAny> = new Map<string, RPCAny>();
 
         for (let i: number = 0; i < mapLen; i++) {
           let [name, ok] = this.readString();
           if (!ok) {
             this.setReadPos(readStart);
-            return [new Map<string, RPCValue>(), false];
+            return [new Map<string, RPCAny>(), false];
           }
           let [value, vok] = this.read();
           if (vok) {
             ret.set(name, value);
           } else {
             this.setReadPos(readStart);
-            return [new Map<string, RPCValue>(), false];
+            return [new Map<string, RPCAny>(), false];
           }
         }
         if (this.getReadPos() == readStart + totalLen) {
@@ -842,10 +842,10 @@ export class RPCStream {
       this.setReadPos(readStart);
     }
 
-    return [new Map<string, RPCValue>(), false];
+    return [new Map<string, RPCAny>(), false];
   }
 
-  public read(): [RPCValue, boolean] {
+  public read(): [RPCAny, boolean] {
     const op: number = this.peekByte();
 
     switch (op) {
@@ -874,22 +874,22 @@ export class RPCStream {
     }
 
     switch ((op >>> 6) & 0x03) {
-    case 0:
-      if (op < 54) {
-        return this.readInt64();
-      } else {
-        return this.readUint64();
-      }
-    case 1:
-      if (op < 96) {
-        return this.readArray();
-      } else {
-        return this.readMap();
-      }
-    case 2:
-      return this.readString();
-    default:
-      return this.readBytes();
-   }
+      case 0:
+        if (op < 54) {
+          return this.readInt64();
+        } else {
+          return this.readUint64();
+        }
+      case 1:
+        if (op < 96) {
+          return this.readArray();
+        } else {
+          return this.readMap();
+        }
+      case 2:
+        return this.readString();
+      default:
+        return this.readBytes();
+    }
   }
 }
