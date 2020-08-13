@@ -20,6 +20,10 @@ function readNumberFromComplementCode(bytes: Uint8Array): number {
 
 export type RPCBool = boolean;
 
+export function toRPCInt64(v: number): RPCInt64 {
+  return new RPCInt64(v);
+}
+
 export class RPCInt64 {
   public static fromBytes(bytes: Uint8Array): RPCInt64 {
     if (bytes.byteLength === 8) {
@@ -66,6 +70,10 @@ export class RPCInt64 {
     }
     return this;
   }
+}
+
+export function toRPCUint64(v: number): RPCUint64 {
+  return new RPCUint64(v);
 }
 
 export class RPCUint64 {

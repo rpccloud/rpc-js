@@ -1,4 +1,4 @@
-import { Deferred } from "./deferred";
+import {Deferred} from "./deferred";
 
 function pad2(num: number): string {
   let norm: number = Math.floor(Math.abs(num));
@@ -172,6 +172,28 @@ export function convertToIsoDateString(date: Date): string {
     "." + pad3(date.getMilliseconds()) +
     dif + pad2(tzo / 60) +
     ":" + pad2(tzo % 60);
+}
+
+export function convertOrdinalToString(n: number): string {
+  if (!Number.isSafeInteger(n) || n <= 0) {
+    return "";
+  }
+
+  switch (n) {
+    case 1:
+      return "1st";
+    case 2:
+      return "2nd";
+    case 3:
+      return "3rd";
+    default:
+      return n + "th";
+  }
+}
+
+
+export function getTimeMS(): number {
+  return new Date().getTime();
 }
 
 export async function sleep(timeMS: number): Promise<any> {

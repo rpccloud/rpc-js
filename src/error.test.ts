@@ -47,6 +47,12 @@ describe("RPCError tests", () => {
     );
   });
 
+  test("RPCError_newSecurityLimitError", () => {
+    expect(RPCError.newSecurityLimitError("message")).toStrictEqual(
+      new RPCError(RPCError.KindSecurityLimit, "message", ""),
+    );
+  });
+
   test("RPCError_getKind", () => {
     expect(RPCError.newKernelPanic("message").getKind()).toStrictEqual(
       RPCError.KindKernelPanic,

@@ -451,27 +451,51 @@ describe("stream tests", () => {
     expect((stream as any).readNBytes(-1).byteLength).toBe(0);
   });
 
-  test("RPCStream_getClientCallbackID_setClientCallbackID", () => {
+  test("RPCStream_getCallbackID_setCallbackID", () => {
     const stream: RPCStream = new RPCStream();
 
     for (let i: number = 0; i < 100; i++) {
-      expect(stream.setClientCallbackID(i)).toStrictEqual(true);
-      expect(stream.getClientCallbackID()).toBe(i);
+      expect(stream.setCallbackID(i)).toStrictEqual(true);
+      expect(stream.getCallbackID()).toBe(i);
     }
 
     for (let i: number = 0; i < 20000; i++) {
       let random: number = Math.floor(Math.random() * 9007199254740991);
-      expect(stream.setClientCallbackID(random)).toStrictEqual(true);
-      expect(stream.getClientCallbackID()).toBe(random);
+      expect(stream.setCallbackID(random)).toStrictEqual(true);
+      expect(stream.getCallbackID()).toBe(random);
     }
 
     for (let i: number = 9007199254740990; i <= 9007199254740991; i++) {
-      expect(stream.setClientCallbackID(i)).toStrictEqual(true);
-      expect(stream.getClientCallbackID()).toBe(i);
+      expect(stream.setCallbackID(i)).toStrictEqual(true);
+      expect(stream.getCallbackID()).toBe(i);
     }
 
-    expect(stream.setClientCallbackID(-1)).toStrictEqual(false);
-    expect(stream.setClientCallbackID(9007199254740992)).toStrictEqual(false);
+    expect(stream.setCallbackID(-1)).toStrictEqual(false);
+    expect(stream.setCallbackID(9007199254740992)).toStrictEqual(false);
+  });
+
+
+  test("RPCStream_getSequence_setSequence", () => {
+    const stream: RPCStream = new RPCStream();
+
+    for (let i: number = 0; i < 100; i++) {
+      expect(stream.setSequence(i)).toStrictEqual(true);
+      expect(stream.getSequence()).toBe(i);
+    }
+
+    for (let i: number = 0; i < 20000; i++) {
+      let random: number = Math.floor(Math.random() * 9007199254740991);
+      expect(stream.setSequence(random)).toStrictEqual(true);
+      expect(stream.getSequence()).toBe(random);
+    }
+
+    for (let i: number = 9007199254740990; i <= 9007199254740991; i++) {
+      expect(stream.setSequence(i)).toStrictEqual(true);
+      expect(stream.getSequence()).toBe(i);
+    }
+
+    expect(stream.setSequence(-1)).toStrictEqual(false);
+    expect(stream.setSequence(9007199254740992)).toStrictEqual(false);
   });
 
   test("RPCStream_writeNull", () => {

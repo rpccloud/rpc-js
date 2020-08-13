@@ -6,6 +6,7 @@ export class RPCError {
   public static readonly KindReplyPanic: number = 4;
   public static readonly KindRuntimePanic: number = 5;
   public static readonly KindKernelPanic: number = 6;
+  public static readonly KindSecurityLimit: number = 7;
 
   public static newProtocolError(message: string): RPCError {
     return new RPCError(RPCError.KindProtocol, message, "");
@@ -29,6 +30,10 @@ export class RPCError {
 
   public static newKernelPanic(message: string): RPCError {
     return new RPCError(RPCError.KindKernelPanic, message, "");
+  }
+
+  public static newSecurityLimitError(message: string): RPCError {
+    return new RPCError(RPCError.KindSecurityLimit, message, "");
   }
 
   private readonly kind: number;

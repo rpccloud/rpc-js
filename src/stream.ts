@@ -45,6 +45,14 @@ export class RPCStream {
     }
   }
 
+  private putUint8Bytes(value: Uint8Array): void {
+    this.enlarge(this.writePos + value.byteLength);
+    for (let n of value) {
+      this.data[this.writePos] = n;
+      this.writePos++;
+    }
+  }
+
   private peekByte(): number {
     if (this.readPos < this.writePos) {
       return this.data[this.readPos];
@@ -63,14 +71,6 @@ export class RPCStream {
       }
     }
     return new Uint8Array(0);
-  }
-
-  private putUint8Bytes(value: Uint8Array): void {
-    this.enlarge(this.writePos + value.byteLength);
-    for (let n of value) {
-      this.data[this.writePos] = n;
-      this.writePos++;
-    }
   }
 
   public getReadPos(): number {
@@ -141,15 +141,32 @@ export class RPCStream {
     this.readPos = streamBodyPos;
   }
 
-  public getClientCallbackID(): number {
+  public getCallbackID(): number {
     let data: Uint8Array = this.data.slice(1, 9);
     return RPCUint64.fromBytes(data).toNumber();
   }
 
-  public setClientCallbackID(id: number): boolean {
+  public setCallbackID(id: number): boolean {
     if (Number.isInteger(id) && id >= 0 && id <= 9007199254740991) {
       const prevWritePos: number = this.writePos;
       this.writePos = 1;
+      this.writeUint64Unsafe(id);
+      this.writePos = prevWritePos;
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  public getSequence(): number {
+    let data: Uint8Array = this.data.slice(9, 17);
+    return RPCUint64.fromBytes(data).toNumber();
+  }
+
+  public setSequence(id: number): boolean {
+    if (Number.isInteger(id) && id >= 0 && id <= 9007199254740991) {
+      const prevWritePos: number = this.writePos;
+      this.writePos = 9;
       this.writeUint64Unsafe(id);
       this.writePos = prevWritePos;
       return true;
@@ -170,56 +187,37 @@ export class RPCStream {
     this.putByte(1);
   }
 
-  public writeBool(v: RPCBool): boolean {
-    if (v === null || v === undefined) {
-      return false;
-    }
-
-    if (v) {
+  public writeBool(v: RPCBool): void {
+    if (v === true) {
       this.putByte(2);
-      return true;
     } else {
       this.putByte(3);
-      return false;
     }
   }
 
-  public writeFloat64(value: RPCFloat64): boolean {
-    if (value === null || value === undefined) {
-      return false;
-    }
-
+  public writeFloat64(value: RPCFloat64): void {
     const v: number = value.toNumber();
     if (v === 0) {
       this.putByte(4);
-      return true;
     } else if (!Number.isNaN(v)) {
       this.putByte(5);
       let arr: Array<number> = [];
       Ieee754.write(arr, v, 0, true, 52, 8);
       this.putBytes(arr);
-      return true;
     } else {
-      return false;
+      throw new Error("bad RPCFloat64");
     }
   }
 
-  public writeInt64(value: RPCInt64): boolean {
-    if (value === null || value === undefined) {
-      return false;
-    }
-
+  public writeInt64(value: RPCInt64): void {
     let v: number = value.toNumber();
-
     if (v > -8 && v < 33) {
       this.putByte(v + 21);
-      return true;
     } else if (v >= -32768 && v < 32768) {
       v += 32768;
       this.putByte(6);
       this.putByte(v);
       this.putByte(v >>> 8);
-      return true;
     } else if (v >= -2147483648 && v < 2147483648) {
       v += 2147483648;
       this.putByte(7);
@@ -229,7 +227,6 @@ export class RPCStream {
       v >>>= 8;
       this.putByte(v);
       this.putByte(v >>> 8);
-      return true;
     } else if (v >= -9007199254740991 && v <= 9007199254740991) {
       const negative: boolean = v < 0;
       if (negative) {
@@ -254,36 +251,26 @@ export class RPCStream {
         this.putByte((v >>> 8) & 0x1F);
         this.putByte(0x80);
       }
-      return true;
     } else {
       const bytes: Uint8Array | null = value.getBytes();
       if (bytes != null && bytes.byteLength === 8) {
         this.putByte(8);
-        for (let i: number = 0; i < 8; i++) {
-          this.putByte(bytes[i]);
-        }
-        return true;
+        this.putUint8Bytes(bytes);
       } else {
-        return false;
+        throw Error("bad RPCInt64");
       }
     }
   }
 
-  public writeUint64(value: RPCUint64): boolean {
-    if (value === null || value === undefined) {
-      return false;
-    }
-
+  public writeUint64(value: RPCUint64): void {
     let v: number = value.toNumber();
 
     if (v < 10) {
       this.putByte(v + 54);
-      return true;
     } else if (v < 65536) {
       this.putByte(9);
       this.putByte(v);
       this.putByte(v >>> 8);
-      return true;
     } else if (v < 4294967296) {
       this.putByte(10);
       this.putByte(v);
@@ -292,40 +279,32 @@ export class RPCStream {
       v >>>= 8;
       this.putByte(v);
       this.putByte(v >>> 8);
-      return true;
     } else if (v <= 9007199254740991) {
       this.putByte(11);
       this.writeUint64Unsafe(v);
-      return true;
     } else {
       const bytes: Uint8Array | null = value.getBytes();
-      if (isNaN(v) && bytes != null && bytes.byteLength == 8) {
+      if (bytes != null && bytes.byteLength == 8) {
         this.putByte(11);
-        for (let i: number = 0; i < 8; i++) {
-          this.putByte(bytes[i]);
-        }
-        return true;
+        this.putUint8Bytes(bytes);
       } else {
-        return false;
+        throw Error("bad RPCUint64");
       }
     }
   }
 
-  public writeString(v: RPCString): boolean {
-    if (v === null || v === undefined) {
-      return false;
-    }
-
+  public writeString(v: RPCString): void {
     if (v === "") {
       this.putByte(128);
-      return true;
+      return;
     }
 
     const strBuffer: Array<number> = stringToUTF8(v);
     let length: number = strBuffer.length;
 
-    if (length <= 0) {  // to utf8 error
-      return false;
+    if (length <= 0) {
+      // to utf8 error
+      throw Error("bad RPCString");
     } else if (length < 63) {
       // write header
       this.putByte(length + 128);
@@ -333,7 +312,6 @@ export class RPCStream {
       this.putBytes(strBuffer);
       // write tail
       this.putByte(0);
-      return true;
     } else {
       // write header
       this.putByte(191);
@@ -343,26 +321,19 @@ export class RPCStream {
       this.putBytes(strBuffer);
       // write tail
       this.putByte(0);
-      return true;
     }
   }
 
-  public writeBytes(v: RPCBytes): boolean {
-    if (v === null || v === undefined) {
-      return false;
-    }
-
+  public writeBytes(v: RPCBytes): void {
     let length: number = v.byteLength;
 
     if (length == 0) {
       this.putByte(192);
-      return true;
     } else if (length < 63) {
       // write header
       this.putByte(length + 192);
       // write body
       this.putUint8Bytes(v);
-      return true;
     } else {
       // write header
       this.putByte(255);
@@ -370,19 +341,18 @@ export class RPCStream {
       this.writeLengthUnsafe(length);
       // write body
       this.putUint8Bytes(v);
-      return true;
     }
   }
 
-  public writeArray(v: RPCArray): boolean {
-    if (v === null || v === undefined) {
-      return false;
-    }
+  public writeArray(v: RPCArray): number {
+    return this.writeArrayInner(v, 64);
+  }
 
+  private writeArrayInner(v: RPCArray, depth: number): number {
     const arrLen: number = v.length;
     if (arrLen === 0) {
       this.putByte(64);
-      return true;
+      return RPCStream.WriteOK;
     }
 
     const startPos: number = this.writePos;
@@ -399,9 +369,10 @@ export class RPCStream {
     }
 
     for (let i: number = 0; i < arrLen; i++) {
-      if (!this.write(v[i])) {
+      let errCode: number = this.writeInner(v[i], depth - 1);
+      if (errCode !== RPCStream.WriteOK) {
         this.setWritePos(startPos);
-        return false;
+        return errCode;
       }
     }
 
@@ -411,18 +382,18 @@ export class RPCStream {
     this.writeLengthUnsafe(endPos - startPos);
     this.writePos = endPos;
 
-    return true;
+    return RPCStream.WriteOK;
   }
 
-  public writeMap(v: RPCMap): boolean {
-    if (v === null || v === undefined) {
-      return false;
-    }
+  public writeMap(v: RPCMap): number {
+    return this.writeMapInner(v, 64);
+  }
 
+  private writeMapInner(v: RPCMap, depth: number): number {
     const mapLen: number = v.size;
     if (mapLen === 0) {
       this.putByte(96);
-      return true;
+      return RPCStream.WriteOK;
     }
     const startPos: number = this.writePos;
     if (mapLen > 30) {
@@ -436,13 +407,11 @@ export class RPCStream {
     }
 
     for (let [key, value] of v) {
-      if (!this.writeString(key)) {
+      this.writeString(key);
+      let errCode: number = this.writeInner(value, depth - 1);
+      if (errCode !== RPCStream.WriteOK) {
         this.setWritePos(startPos);
-        return false;
-      }
-      if (!this.write(value)) {
-        this.setWritePos(startPos);
-        return false;
+        return errCode;
       }
     }
 
@@ -452,43 +421,52 @@ export class RPCStream {
     this.writeLengthUnsafe(endPos - startPos);
     this.writePos = endPos;
 
-    return true;
+    return RPCStream.WriteOK;
   }
 
-  public write(v: any): boolean {
-    if (v === undefined) {
-      return false;
+  public write(v: RPCAny): number {
+    return this.writeInner(v, 64);
+  }
+
+  private writeInner(v: any, depth: number): number {
+    if (depth <= 0) {
+      return RPCStream.WriteOverflow;
     }
 
     if (v === null) {
       this.writeNull();
-      return true;
+      return RPCStream.WriteOK;
     }
 
     switch (typeof v) {
       case "boolean":
         this.writeBool(v);
-        return true;
+        return RPCStream.WriteOK;
       case "string":
-        return this.writeString(v);
+        this.writeString(v);
+        return RPCStream.WriteOK;
       case "object":
         if (v instanceof RPCInt64) {
-          return this.writeInt64(v);
+          this.writeInt64(v);
+          return RPCStream.WriteOK;
         } else if (v instanceof RPCUint64) {
-          return this.writeUint64(v);
+          this.writeUint64(v);
+          return RPCStream.WriteOK;
         } else if (v instanceof RPCFloat64) {
-          return this.writeFloat64(v);
+          this.writeFloat64(v);
+          return RPCStream.WriteOK;
         } else if (v instanceof Uint8Array) {
-          return this.writeBytes(v);
+          this.writeBytes(v);
+          return RPCStream.WriteOK;
         } else if (v instanceof Array) {
-          return this.writeArray(v);
+          return this.writeArrayInner(v, depth);
         } else if (v instanceof Map) {
-          return this.writeMap(v);
+          return this.writeMapInner(v, depth);
         } else {
-          return false;
+          return RPCStream.UnsupportedType;
         }
       default:
-        return false;
+        return RPCStream.UnsupportedType;
     }
   }
 
