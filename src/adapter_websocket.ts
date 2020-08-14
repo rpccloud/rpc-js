@@ -9,7 +9,7 @@ export interface IStreamConn {
 
   sendStream(stream: RPCStream): RPCError | null;
 
-  close(): RPCError | null;
+  close(): void;
 }
 
 export interface IClientAdapter {
@@ -47,9 +47,8 @@ export class WebSocketStreamConn implements IStreamConn {
     return null;
   }
 
-  public close(): RPCError | null {
-    this.ws.close(websocketCloseNormalClosure);
-    return null;
+  public close(): void {
+    this.ws.close(websocketCloseNormalClosure, "");
   }
 }
 
@@ -90,7 +89,7 @@ export class WSClientAdapter implements IClientAdapter {
       };
       ws.onerror = (ev: Event) => {
         onError(RPCError.newTransportError(ev.type));
-        ws.close(websocketCloseNormalClosure);
+        ws.close(websocketCloseNormalClosure, "");
       };
     }
   }
@@ -100,7 +99,7 @@ export class WSClientAdapter implements IClientAdapter {
       || this.status === WSClientAdapter.StatusOpened) {
       if (this.ws != null) {
         this.status = WSClientAdapter.StatusClosing;
-        this.ws.close(websocketCloseNormalClosure);
+        this.ws.close(websocketCloseNormalClosure, "");
       }
     } else {
       onError(RPCError.newKernelPanic("it is not running"));
