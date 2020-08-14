@@ -18,7 +18,6 @@ const controlStreamKindRequestIds: number = 3;
 const controlStreamKindRequestIdsBack: number = 4;
 
 class SendItem {
-  public static readonly StatusNone: number = 0;
   public static readonly StatusRunning: number = 1;
   public static readonly StatusFinish: number = 2;
 
@@ -33,7 +32,7 @@ class SendItem {
 
   public constructor() {
     this.id = 0;
-    this.status = SendItem.StatusNone;
+    this.status = SendItem.StatusRunning;
     this.startMS = 0;
     this.sendMS = 0;
     this.timeoutMS = 0;
@@ -319,7 +318,6 @@ export class RPCClient {
     }
   }
 
-
   private onCheckConnect(): void {
     if (this.adapter == null) {
       this.onError(RPCError.newRuntimePanic(
@@ -382,12 +380,14 @@ export class RPCClient {
 
       if (callbackID > 0) {
         // data stream
-        this.sendMap.get(callbackID)?.returnStream(stream);
+        if (this.sendMap.get(callbackID)?.returnStream(stream) === true) {
+          this.sendMap.delete(callbackID);
+        }
       } else if (callbackID === 0 && sequence > 0) {
         // controlStream RequestIdsBack
         let [kind] = stream.readInt64();
         if (kind.toNumber() === controlStreamKindRequestIdsBack) {
-          let [maxCallbackID] = stream.readInt64();
+          let [maxCallbackID] = stream.readUint64();
           if (maxCallbackID.toNumber() > this.maxCallbackID) {
             this.maxCallbackID = maxCallbackID.toNumber();
           }
@@ -418,9 +418,6 @@ export class RPCClient {
 
   public async send(timeoutMS: number, target: string, ...args: Array<RPCAny>)
     : Promise<RPCAny> {
-    // make client connect if not opened
-    this.onCheckConnect();
-
     // create SendItem
     let item: SendItem = new SendItem();
     item.startMS = getTimeNowMS();
@@ -460,6 +457,9 @@ export class RPCClient {
       this.preSendTail = item;
     }
 
+    // speed up
+    this.onCheckConnect();
+    this.onCheckRunning();
     // wait for response
     return item.deferred.promise;
   }

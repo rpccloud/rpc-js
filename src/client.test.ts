@@ -1,7 +1,6 @@
 // import * as WebSocket from "ws";
 // import {Deferred} from "./deferred";
 import {RPCClient} from "./client";
-import {sleep} from "./utils";
 import {RPCAny} from "./types";
 // import {Logger} from "./logger";
 // import {sleep} from "./utils";
@@ -9,17 +8,26 @@ import {RPCAny} from "./types";
 
 
 describe("RPCClient dev", () => {
+  beforeEach(() => {
+    jest.setTimeout(200000);
+  });
+
+  afterEach(() => {
+    jest.setTimeout(5000);
+  });
+
   test("RPCClient_new", async () => {
     const client: RPCClient = new RPCClient("ws://127.0.0.1:8080/");
 
-    try {
-      let v: RPCAny = await client.send(2000, "#.user:SayHello", "ts");
-      console.log(v);
-    } catch (e) {
-      console.log(e);
+    for (let i: number = 0; i < 50000; i++) {
+      try {
+        let v: RPCAny = await client.send(2000, "#.user:SayHello", `ts${i}`);
+        console.log(v);
+      } catch (e) {
+        console.log(e);
+      }
     }
 
-    await sleep(5000);
     client.close();
   });
 });
