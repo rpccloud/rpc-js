@@ -9,7 +9,7 @@ import {RPCAny} from "./types";
 
 describe("RPCClient dev", () => {
   beforeEach(() => {
-    jest.setTimeout(200000);
+    jest.setTimeout(1000000);
   });
 
   afterEach(() => {
@@ -18,16 +18,23 @@ describe("RPCClient dev", () => {
 
   test("RPCClient_new", async () => {
     const client: RPCClient = new RPCClient("ws://127.0.0.1:8080/");
-
+    let sum: number = 0;
     for (let i: number = 0; i < 50000; i++) {
       try {
         let v: RPCAny = await client.send(2000, "#.user:SayHello", `ts${i}`);
-        console.log(v);
+        if (v?.toString().startsWith("hello ts")) {
+          sum++;
+
+          if (sum % 100 == 0) {
+            console.log(sum);
+          }
+        }
       } catch (e) {
-        console.log(e);
+        expect(e).toStrictEqual(null);
       }
     }
 
+    expect(sum).toStrictEqual(50000);
     client.close();
   });
 });
