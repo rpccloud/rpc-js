@@ -18,10 +18,6 @@ describe("RPCClient dev", () => {
         let v: RPCAny = await client.send(3000, "#.user:SayHello", `ts${i}`);
         if (v?.toString().startsWith("hello ts")) {
           sum++;
-
-          if (sum % 100 == 0) {
-            console.log(sum);
-          }
         }
       } catch (e) {
         expect(e).toStrictEqual(null);
