@@ -2,9 +2,10 @@ import {RPCStream} from "./stream";
 import {RPCError} from "./error";
 
 const websocketCloseNormalClosure: number = 1000;
+type ReceiveStreamFN = ((conn: IStreamConn, stream: RPCStream) => void) | null;
 
 export interface IStreamConn {
-  onReceiveStream: ((stream: RPCStream) => void) | null;
+  onReceiveStream: ReceiveStreamFN;
 
   sendStream(stream: RPCStream): RPCError | null;
 
@@ -20,14 +21,12 @@ export interface IClientAdapter {
 
   close(onError: (err: RPCError) => void): void;
 
-  getConn(): IStreamConn | null;
-
   isClosed(): boolean;
 }
 
 export class WebSocketStreamConn implements IStreamConn {
   private readonly ws: WebSocket;
-  public onReceiveStream: ((stream: RPCStream) => void) | null = null;
+  public onReceiveStream: ReceiveStreamFN = null;
 
   public constructor(ws: WebSocket) {
     ws.onmessage = this.onMessage.bind(this);
@@ -39,7 +38,7 @@ export class WebSocketStreamConn implements IStreamConn {
       const stream: RPCStream = new RPCStream();
       stream.setWritePos(0);
       stream.putUint8Bytes(new Uint8Array(event?.data));
-      this.onReceiveStream(stream);
+      this.onReceiveStream(this, stream);
     }
   }
 
@@ -61,17 +60,12 @@ export class WSClientAdapter implements IClientAdapter {
   private static StatusClosed: number = 4;
 
   private ws: WebSocket | null = null;
-  private conn: IStreamConn | null = null;
   private readonly connectString: string;
   private status: number;
 
   public constructor(connectString: string) {
     this.connectString = connectString;
     this.status = WSClientAdapter.StatusClosed;
-  }
-
-  public getConn(): IStreamConn | null {
-    return this.conn;
   }
 
   public open(
@@ -87,14 +81,12 @@ export class WSClientAdapter implements IClientAdapter {
       let conn: IStreamConn = new WebSocketStreamConn(ws);
       ws.binaryType = "arraybuffer";
       ws.onopen = () => {
-        this.conn = conn;
         this.status = WSClientAdapter.StatusOpened;
         onConnOpen(conn);
       };
       ws.onclose = () => {
         onConnClose(conn);
         this.status = WSClientAdapter.StatusClosed;
-        this.conn = null;
         this.ws = null;
       };
       ws.onerror = (ev: Event) => {

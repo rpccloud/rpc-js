@@ -187,12 +187,12 @@ export function convertOrdinalToString(n: number): string {
     case 3:
       return "3rd";
     default:
-      return n + "th";
+      return `${n}th`;
   }
 }
 
 
-export function getTimeMS(): number {
+export function getTimeNowMS(): number {
   return new Date().getTime();
 }
 

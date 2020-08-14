@@ -188,7 +188,7 @@ export class RPCStream {
   }
 
   public writeBool(v: RPCBool): void {
-    if (v === true) {
+    if (v) {
       this.putByte(2);
     } else {
       this.putByte(3);
