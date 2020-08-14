@@ -3,7 +3,11 @@ import {RPCAny, toRPCInt64, toRPCUint64} from "./types";
 import {RPCError} from "./error";
 import {RPCStream} from "./stream";
 import {getTimeMS} from "./utils";
-import {IStreamConn, IClientAdapter} from "./adapter_websocket";
+import {
+  IStreamConn,
+  IClientAdapter,
+  WSClientAdapter,
+} from "./adapter_websocket";
 
 const errStringBadStream: string = "bad stream";
 const errStringTimeout: string = "timeout";
@@ -102,9 +106,19 @@ class SendItem {
   }
 }
 
+// export function dial(
+//   connectString: string,
+// ): [RPCClient | null, RPCError | null] {
+//   switch (new URL(connectString).protocol) {
+//     case "ws":
+//       return [new RPCClient(new WSClientAdapter(connectString)), null];
+//     default:
+//       return null,
+//         internal.NewRuntimePanic(fmt.Sprintf("unknown scheme %s", urlInfo.Scheme));
+//   }
+// }
 
-// Client ...
-export class Client {
+export class RPCClient {
   private isRunning: boolean;
 
   private sessionString: string;
@@ -121,15 +135,27 @@ export class Client {
   // private lastControlSendTimeMS: number = 0;
   // private lastTimeoutCheckTime: number = 0;
   private isInitStream: boolean;
+  private connectString: string;
 
-  private adapter: IClientAdapter;
+  private adapter: IClientAdapter | null;
   private readonly timerCheckConnect: number;
   private readonly timerCheckRunning: number;
 
-  public constructor(adapter: IClientAdapter) {
+  public constructor(connectString: string) {
     this.isRunning = true;
     this.sessionString = "";
-    this.adapter = adapter;
+    this.connectString = connectString;
+
+    console.log(new URL(connectString).protocol);
+    switch (new URL(connectString).protocol) {
+      case "ws:":
+        this.adapter = new WSClientAdapter(connectString);
+        break;
+      default:
+        this.adapter = null;
+        break;
+    }
+
     this.timerCheckConnect = window.setInterval(
       this.onCheckConnect.bind(this),
       1000,
@@ -142,6 +168,13 @@ export class Client {
   }
 
   private onCheckConnect(): void {
+    if (this.adapter == null) {
+      this.onError(RPCError.newRuntimePanic(
+        "error connectString " + this.connectString,
+      ));
+      return;
+    }
+
     if (this.adapter.isClosed()) {
       this.adapter.open(
         (conn: IStreamConn) => {
@@ -170,7 +203,7 @@ export class Client {
 
   private onCheckRunning(): void {
     if (this.isRunning) {
-      console.log("onCheckRunning");
+      return;
     }
   }
 
@@ -187,7 +220,7 @@ export class Client {
       this.isRunning = false;
       window.clearInterval(this.timerCheckConnect);
       window.clearInterval(this.timerCheckRunning);
-      this.adapter.close(this.onError.bind(this));
+      this.adapter?.close(this.onError.bind(this));
       return true;
     } else {
       this.onError(RPCError.newRuntimePanic("it is not running"));

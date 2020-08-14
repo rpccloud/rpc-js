@@ -1,6 +1,7 @@
 import {RPCStream} from "./stream";
 import {RPCError} from "./error";
 
+const websocketCloseNormalClosure: number = 1000;
 
 export interface IStreamConn {
   onReceiveStream: ((stream: RPCStream) => void) | null;
@@ -46,7 +47,7 @@ export class WebSocketStreamConn implements IStreamConn {
   }
 
   public close(): RPCError | null {
-    this.ws.close();
+    this.ws.close(websocketCloseNormalClosure);
     return null;
   }
 }
@@ -78,6 +79,7 @@ export class WSClientAdapter implements IClientAdapter {
   ): void {
     if (this.status === WSClientAdapter.StatusClosed) {
       this.status = WSClientAdapter.StatusOpening;
+      console.log(this.connectString);
       let ws: WebSocket = new WebSocket(this.connectString);
       this.ws = ws;
       let conn: IStreamConn = new WebSocketStreamConn(ws);
@@ -95,7 +97,7 @@ export class WSClientAdapter implements IClientAdapter {
       };
       ws.onerror = (ev: Event) => {
         onError(RPCError.newTransportError(ev.type));
-        ws.close();
+        ws.close(websocketCloseNormalClosure);
       };
     }
   }
@@ -105,7 +107,7 @@ export class WSClientAdapter implements IClientAdapter {
       || this.status === WSClientAdapter.StatusOpened) {
       if (this.ws != null) {
         this.status = WSClientAdapter.StatusClosing;
-        this.ws.close();
+        this.ws.close(websocketCloseNormalClosure);
       }
     } else {
       onError(RPCError.newKernelPanic("it is not running"));

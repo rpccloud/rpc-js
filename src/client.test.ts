@@ -1,9 +1,24 @@
 // import * as WebSocket from "ws";
-// import { Deferred } from "./deferred";
-// import { RPCClient, WebSocketNetClient } from "./client";
-// import { Logger } from "./logger";
-// import { sleep } from "./utils";
-// import { RPCStream } from "./stream";
+// import {Deferred} from "./deferred";
+import {RPCClient} from "./client";
+import {sleep} from "./utils";
+// import {Logger} from "./logger";
+// import {sleep} from "./utils";
+// import {RPCStream} from "./stream";
+
+
+describe("RPCClient dev", () => {
+  test("RPCClient_new", async () => {
+
+    // const ws: WebSocket = new WebSocket("ws://127.0.0.1:8080/");
+
+
+    const client: RPCClient = new RPCClient("ws://127.0.0.1:8080/");
+    await sleep(5000);
+    client.close();
+  });
+});
+
 //
 // async function runWebSocketServer(
 //   port: number,
@@ -11,7 +26,7 @@
 // ): Promise<any> {
 //   const deferred: Deferred<any> = new Deferred<any>();
 //
-//   const wss: WebSocket.Server = new WebSocket.Server({ port: port });
+//   const wss: WebSocket.Server = new WebSocket.Server({port: port});
 //   const logger: Logger = new Logger();
 //
 //   wss.on("connection", async (ws: WebSocket) => {
@@ -43,6 +58,9 @@
 //   return deferred.promise;
 // }
 //
+
+//
+//
 // describe("WebSocketNetClient tests", () => {
 //   beforeEach(() => {
 //     jest.spyOn(console, "log");
@@ -53,10 +71,9 @@
 //   });
 //
 //   test("WebSocketNetClient_new", async () => {
-//     const client: WebSocketNetClient = new WebSocketNetClient(new Logger());
-//     expect((client as any).logger).toBeTruthy();
-//     expect((client as any).webSocket === undefined).toBe(true);
-//     expect((client as any).reader === undefined).toBe(true);
+//     const client: RPCClient = new RPCClient("ws://127.0.0.1:31001");
+//
+//     client.close();
 //   });
 //
 //   test("WebSocketNetClient_send", async () => {
