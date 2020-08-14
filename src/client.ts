@@ -126,7 +126,6 @@ export class RPCClient {
     this.sessionString = "";
     this.connectString = connectString;
 
-    console.log(new URL(connectString).protocol);
     switch (new URL(connectString).protocol) {
       case "ws:":
         this.adapter = new WSClientAdapter(connectString);
