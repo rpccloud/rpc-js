@@ -1,5 +1,6 @@
 import {RPCClient} from "./client";
 import {RPCAny} from "./types";
+import {sleep} from "./utils";
 
 describe("RPCClient dev", () => {
   beforeEach(() => {
@@ -13,7 +14,7 @@ describe("RPCClient dev", () => {
   test("RPCClient_new", async () => {
     const client: RPCClient = new RPCClient("ws://127.0.0.1:8080/");
     let sum: number = 0;
-    for (let i: number = 0; i < 500; i++) {
+    for (let i: number = 0; i < 300; i++) {
       try {
         let v: RPCAny = await client.send(3000, "#.user:SayHello", `ts${i}`);
         if (v?.toString().startsWith("hello ts")) {
@@ -24,8 +25,10 @@ describe("RPCClient dev", () => {
       }
     }
 
-    expect(sum).toStrictEqual(500);
+    expect(sum).toStrictEqual(300);
     client.close();
+
+    await sleep(1000);
   });
 });
 
