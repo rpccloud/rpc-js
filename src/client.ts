@@ -148,7 +148,7 @@ export class RPCClient {
   }
 
   private initConn(stream: RPCStream): RPCError | null {
-    if (stream.getCallbackID() <= 0) {
+    if (stream.getCallbackID() !== 0) {
       return RPCError.newProtocolError(errStringBadStream);
     }
 
@@ -156,7 +156,8 @@ export class RPCClient {
       return RPCError.newProtocolError(errStringBadStream);
     }
 
-    if (stream.readInt64() !== [toRPCInt64(controlStreamKindInitBack), true]) {
+    let [kind] = stream.readInt64();
+    if (kind.toNumber() != controlStreamKindInitBack) {
       return RPCError.newProtocolError(errStringBadStream);
     }
 
@@ -366,7 +367,6 @@ export class RPCClient {
   }
 
   private onReceiveStream(conn: IStreamConn, stream: RPCStream): void {
-    console.log(stream.getBuffer());
     if (this.conn === null) {
       // if conn is null, we can only accept initBack stream
       const err: RPCError | null = this.initConn(stream);
@@ -460,7 +460,6 @@ export class RPCClient {
       this.preSendTail = item;
     }
 
-    console.log(this.preSendHead);
     // wait for response
     return item.deferred.promise;
   }

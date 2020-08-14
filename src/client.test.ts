@@ -2,6 +2,7 @@
 // import {Deferred} from "./deferred";
 import {RPCClient} from "./client";
 import {sleep} from "./utils";
+import {RPCAny} from "./types";
 // import {Logger} from "./logger";
 // import {sleep} from "./utils";
 // import {RPCStream} from "./stream";
@@ -9,11 +10,15 @@ import {sleep} from "./utils";
 
 describe("RPCClient dev", () => {
   test("RPCClient_new", async () => {
-
-    // const ws: WebSocket = new WebSocket("ws://127.0.0.1:8080/");
-
-
     const client: RPCClient = new RPCClient("ws://127.0.0.1:8080/");
+
+    try {
+      let v: RPCAny = await client.send(2000, "#.user:SayHello", "ts");
+      console.log(v);
+    } catch (e) {
+      console.log(e);
+    }
+
     await sleep(5000);
     client.close();
   });

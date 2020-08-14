@@ -75,7 +75,6 @@ export class WSClientAdapter implements IClientAdapter {
   ): void {
     if (this.status === WSClientAdapter.StatusClosed) {
       this.status = WSClientAdapter.StatusOpening;
-      console.log(this.connectString);
       let ws: WebSocket = new WebSocket(this.connectString);
       this.ws = ws;
       let conn: IStreamConn = new WebSocketStreamConn(ws);
