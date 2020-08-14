@@ -1,11 +1,5 @@
-// import * as WebSocket from "ws";
-// import {Deferred} from "./deferred";
 import {RPCClient} from "./client";
 import {RPCAny} from "./types";
-// import {Logger} from "./logger";
-// import {sleep} from "./utils";
-// import {RPCStream} from "./stream";
-
 
 describe("RPCClient dev", () => {
   beforeEach(() => {
@@ -19,9 +13,9 @@ describe("RPCClient dev", () => {
   test("RPCClient_new", async () => {
     const client: RPCClient = new RPCClient("ws://127.0.0.1:8080/");
     let sum: number = 0;
-    for (let i: number = 0; i < 50000; i++) {
+    for (let i: number = 0; i < 500; i++) {
       try {
-        let v: RPCAny = await client.send(2000, "#.user:SayHello", `ts${i}`);
+        let v: RPCAny = await client.send(3000, "#.user:SayHello", `ts${i}`);
         if (v?.toString().startsWith("hello ts")) {
           sum++;
 
@@ -34,7 +28,7 @@ describe("RPCClient dev", () => {
       }
     }
 
-    expect(sum).toStrictEqual(50000);
+    expect(sum).toStrictEqual(500);
     client.close();
   });
 });
