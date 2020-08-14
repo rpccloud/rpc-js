@@ -115,6 +115,10 @@ export class RPCUint64 {
   }
 }
 
+export function toRPCFloat64(v: number): RPCFloat64 {
+  return new RPCFloat64(v);
+}
+
 export class RPCFloat64 {
   private readonly value: number;
 
