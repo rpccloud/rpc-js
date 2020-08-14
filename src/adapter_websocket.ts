@@ -35,9 +35,11 @@ export class WebSocketStreamConn implements IStreamConn {
   }
 
   private onMessage(event?: MessageEvent): void {
-    console.log(event?.data);
-    if (this.onReceiveStream != null) {
-      this.onReceiveStream(new RPCStream());
+    if (event?.data instanceof ArrayBuffer && this.onReceiveStream != null) {
+      const stream: RPCStream = new RPCStream();
+      stream.setWritePos(0);
+      stream.putUint8Bytes(new Uint8Array(event?.data));
+      this.onReceiveStream(stream);
     }
   }
 

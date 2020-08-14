@@ -45,7 +45,7 @@ export class RPCStream {
     }
   }
 
-  private putUint8Bytes(value: Uint8Array): void {
+  public putUint8Bytes(value: Uint8Array): void {
     this.enlarge(this.writePos + value.byteLength);
     for (let n of value) {
       this.data[this.writePos] = n;

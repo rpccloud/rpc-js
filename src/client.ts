@@ -207,7 +207,8 @@ export class RPCClient {
     }
   }
 
-  private onReceiveStream(): void {
+  private onReceiveStream(stream: RPCStream): void {
+    console.log(stream.getBuffer());
     if (this.isInitStream) {
       return;
     } else {
