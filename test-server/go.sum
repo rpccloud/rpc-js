@@ -1,4 +1,0 @@
-github.com/gorilla/websocket v1.4.2 h1:+/TMaTYc4QFitKJxsQ7Yye35DkWvkdLcvGKqM+x0Ufc=
-github.com/gorilla/websocket v1.4.2/go.mod h1:YR8l580nyteQvAITg2hZ9XVh4b55+EU/adAjf1fMHhE=
-github.com/rpccloud/rpc v0.0.0-20200814072304-b3417bd52ae3 h1:BAwfDXOVHYj3fxC2FgANeuNIiNAazGTe5dacw45wn7Y=
-github.com/rpccloud/rpc v0.0.0-20200814072304-b3417bd52ae3/go.mod h1:IMpSVsBW2n5H43k8dizsijPYVnkTlkPVuzSGmAvo2Sc=
