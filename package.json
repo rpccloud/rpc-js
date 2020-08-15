@@ -1,6 +1,6 @@
 {
   "name": "rpccloud-js",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "rpc client for web",
   "main": "build/index.js",
   "types": "build/index.d.ts",
@@ -11,7 +11,8 @@
     "precoverage": "npm run compile",
     "coverage": "jest --env=jsdom --colors --coverage test",
     "showcoverage": "npm run coverage",
-    "postshowcoverage": "open ./coverage/lcov-report/index.html"
+    "postshowcoverage": "open ./coverage/lcov-report/index.html",
+    "prepublish": "npm run compile"
   },
   "repository": {
     "type": "git",
