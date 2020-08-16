@@ -196,6 +196,19 @@ export function getTimeNowMS(): number {
   return new Date().getTime();
 }
 
+export function getProtocol(urlString: string): string {
+  if (urlString === null || urlString === undefined) {
+    return "";
+  }
+
+  const idx: number = urlString.indexOf(":");
+  if (idx > 0) {
+    return urlString.substr(0, idx);
+  } else {
+    return "";
+  }
+}
+
 export async function sleep(timeMS: number): Promise<any> {
   const deferred: Deferred<any> = new Deferred<any>();
   setTimeout(() => {

@@ -2,7 +2,7 @@ import {Deferred} from "./deferred";
 import {RPCAny, toRPCInt64, toRPCUint64} from "./types";
 import {RPCError} from "./error";
 import {RPCStream} from "./stream";
-import {getTimeNowMS} from "./utils";
+import {getProtocol, getTimeNowMS} from "./utils";
 import {
   IStreamConn,
   IClientAdapter,
@@ -126,8 +126,8 @@ export class RPCClient {
     this.sessionString = "";
     this.connectString = connectString;
 
-    switch (new URL(connectString).protocol) {
-      case "ws:":
+    switch (getProtocol(connectString)) {
+      case "ws":
         this.adapter = new WSClientAdapter(connectString);
         break;
       default:

@@ -1,6 +1,6 @@
 {
   "name": "rpccloud-js",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "rpc client for web",
   "main": "build/index.js",
   "types": "build/index.d.ts",
